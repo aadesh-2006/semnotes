@@ -2,10 +2,10 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--M2%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--M3%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
-[![Engine](https://img.shields.io/badge/Habit%20Engine-Persistent%20Dexie-3E885B.svg)](#database-and-persistence)
+[![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
 
 SEMNÓTĒS is a local-first, sovereign personal discipline operating system engineered for uncompromising self-mastery.
 
@@ -15,7 +15,7 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 
 ## 🏛️ Core Principles
 
-1. **Unforgiving Truth & Objective Auditing:** Missed scheduled commitments reset current streaks deterministically to zero (M3). Historical milestones, total successful days, and check-in records are preserved permanently.
+1. **Unforgiving Truth & Objective Auditing:** Missed scheduled commitments reset current streaks deterministically to zero. Historical milestones, total successful days, and longest streak records are preserved permanently.
 2. **True Streak Independence:** Abstinence tracking (e.g., digital purity, sobriety), completion habits (e.g., algorithm practice, reading), and quantitative targets (e.g., distance, hydration) run in complete isolation. Breaking one commitment never compromises another.
 3. **Local-First Privacy:** All habit entities, daily logs, check-ins, and audit records reside on-device in IndexedDB (`semnotes_db` via Dexie.js).
 4. **Obsidian & Gold Aesthetics:** A solemn, high-contrast palette reflecting gravitas and focus: deep charcoals, ink blacks, and muted brushed gold accents.
@@ -28,8 +28,8 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 - **Styling:** Tailwind CSS (Obsidian & Gold Design System), Lucide React
 - **Persistence:** Dexie.js (IndexedDB) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
-- **Visualizations:** Recharts & SVG Activity Heatmaps
-- **Testing:** Vitest & React Testing Library (20/20 automated tests passing)
+- **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`)
+- **Testing:** Vitest & React Testing Library (38/38 automated tests passing)
 
 ---
 
@@ -37,9 +37,9 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 
 | Module | Purpose | Status |
 | :--- | :--- | :---: |
-| **Command Center** | High-level discipline overview, today's protocol checklist, and active commitment metrics. | **Active (Live DB)** |
-| **Streak Architect** | Full CRUD for independent abstinence, completion, and quantitative habits. | **Active (Live DB)** |
-| **Habit Detail View** | Deep-dive history, standard of excellence, audit logs, and status management. | **Active (Live DB)** |
+| **Command Center** | High-level discipline overview, today's protocol checklist, and active streak metrics. | **Active (Live Engine)** |
+| **Streak Architect** | Full CRUD for independent abstinence, completion, and quantitative habits. | **Active (Live Engine)** |
+| **Streak History & Details** | Deep-dive forensic streak timeline, invariants grid, and status management. | **Active (Live Engine)** |
 | **Consistency Calendar** | Activity heatmaps, monthly schedules, and habit filters. | M5 |
 | **Journal & Reflections** | Client-side encrypted journaling, urge logs, trigger diagnostics, and evening prompts. | M5 |
 | **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics) and variance trends. | M6 |

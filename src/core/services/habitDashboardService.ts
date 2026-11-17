@@ -1,5 +1,7 @@
 import { db } from '../../storage/db';
 import { type Habit, type HabitLog } from '../domain/types';
+import { type HabitStreakResult } from '../streak/streakTypes';
+import { StreakEngine } from '../streak/streakEngine';
 import { isScheduledDay } from './scheduleService';
 
 export interface HabitDashboardItem {
@@ -8,45 +10,54 @@ export interface HabitDashboardItem {
   log?: HabitLog;
   displayStatus: 'completed' | 'maintained' | 'setback' | 'missed' | 'pending' | 'rest_day';
   totalSuccessDays: number;
+  streak: HabitStreakResult;
 }
 
 export interface DashboardMetrics {
   activeHabitsCount: number;
+  activeStreaksCount: number;
   todayScheduledCount: number;
   completedTodayCount: number;
   pendingTodayCount: number;
   failedTodayCount: number;
   completionPercentage: number;
+  allTimeLongestStreak: number;
   items: HabitDashboardItem[];
 }
 
 export class HabitDashboardService {
   /**
-   * Computes actual dashboard statistics for a given local calendar date.
-   * Derived purely from Dexie database records without synthetic placeholders.
+   * Computes actual dashboard statistics for a given local calendar date,
+   * including true independent streak calculations for all habits.
    */
   static async getDashboardMetrics(dateStr: string): Promise<DashboardMetrics> {
     const activeHabits = await db.habits.where('status').equals('active').toArray();
     const todayLogs = await db.habitLogs.where('date').equals(dateStr).toArray();
     const logMap = new Map<string, HabitLog>(todayLogs.map((l) => [l.habitId, l]));
 
+    // Batch calculate streaks for all active habits
+    const streakMap = await StreakEngine.calculateStreaksForHabits(activeHabits, dateStr);
+
     let todayScheduledCount = 0;
     let completedTodayCount = 0;
     let failedTodayCount = 0;
     let pendingTodayCount = 0;
+    let activeStreaksCount = 0;
+    let allTimeLongestStreak = 0;
 
     const items: HabitDashboardItem[] = [];
 
     for (const habit of activeHabits) {
       const scheduled = isScheduledDay(habit.schedule, dateStr, habit.startDate, habit.endDate);
       const log = logMap.get(habit.id);
+      const streak = streakMap.get(habit.id)!;
 
-      // Count total actual completed records for this habit
-      const totalSuccessDays = await db.habitLogs
-        .where('habitId')
-        .equals(habit.id)
-        .filter((l) => l.status === 'completed')
-        .count();
+      if (streak.currentStreak > 0) {
+        activeStreaksCount++;
+      }
+      if (streak.longestStreak > allTimeLongestStreak) {
+        allTimeLongestStreak = streak.longestStreak;
+      }
 
       let displayStatus: HabitDashboardItem['displayStatus'] = 'pending';
 
@@ -77,7 +88,8 @@ export class HabitDashboardService {
         isScheduledToday: scheduled,
         log,
         displayStatus,
-        totalSuccessDays
+        totalSuccessDays: streak.totalSuccessfulDays,
+        streak
       });
     }
 
@@ -86,11 +98,13 @@ export class HabitDashboardService {
 
     return {
       activeHabitsCount: activeHabits.length,
+      activeStreaksCount,
       todayScheduledCount,
       completedTodayCount,
       pendingTodayCount,
       failedTodayCount,
       completionPercentage,
+      allTimeLongestStreak,
       items
     };
   }

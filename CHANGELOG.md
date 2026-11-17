@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.3] — 2026-11-17 (Milestone 3: Independent Strict Streak Engine)
+
+### Added
+- **Independent Strict Streak Engine:**
+  - Dedicated domain calculation module (`src/core/streak/`) featuring:
+    - `StreakCalculator`: Pure functional, deterministic calculation engine accepting explicit evaluation dates.
+    - `StreakEngine`: Database orchestration service for loading logs, deriving pause intervals, and batch calculations.
+    - `StreakUtils`: Timezone-safe calendar sequence generator, range probes, and leap-year boundaries.
+  - Strict mathematical rules:
+    - Current streak increments consecutively on successful scheduled days.
+    - Fails or unrecorded past scheduled days reset current streak immediately to 0.
+    - Longest streak is preserved permanently and monotonically non-decreasing.
+    - Unscheduled days are strictly excluded and never break a streak sequence.
+    - Paused intervals are excluded from failure penalties and preserve continuity upon resumption.
+    - Today's pending check-in preserves active streak from yesterday without premature reset.
+- **Forensic Streak Detail View:**
+  - Integrated full streak analytics in `HabitDetailView`:
+    - 4 primary metric cards: *Current Streak* (with start date), *All-Time Longest* (with historical range), *Success Adherence %*, and *Next Commitment*.
+    - Strict Streak Invariants & Status grid: Total successes, total failures, missed days, and last successful date.
+    - Chronological timeline table displaying evaluated status and explicit *Streak Impact* indicators (`+1 Increment`, `Resets to 0`, `Neutral`).
+- **Dashboard & Card Integration:**
+  - `CommandCenter` top metrics row upgraded to real database streak totals: *Active Streaks* and *All-Time Longest*.
+  - Protocol checklist and `HabitCard` display prominent streak badges with flame icons (`{streak}d`) and all-time record counters.
+- **Automated Test Suite:**
+  - Added 18 unit and integration tests covering 20 edge-case scenarios (`src/core/streak/streakEngine.test.ts`), bringing total passing tests to 38/38.
+
+---
+
 ## [1.0.0-alpha.2] — 2026-11-17 (Milestone 2: Habit Management Engine)
 
 ### Added

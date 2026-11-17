@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
 import {
   type Habit,
   type HabitCategory,
   type HabitStatus,
-  type HabitLog
+  type HabitLog,
+  type AuditRecord
 } from '../../core/domain/types';
+import type { HabitStreakResult } from '../../core/streak/streakTypes';
 import { HabitService } from '../../core/services/habitService';
+import { StreakCalculator } from '../../core/streak/streakCalculator';
+import { StreakEngine } from '../../core/streak/streakEngine';
 import { isScheduledDay } from '../../core/services/scheduleService';
 import { formatCalendarDate } from '../../core/utils';
 import { HabitCard } from './components/HabitCard';
@@ -61,21 +65,59 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
 
   // Reactive Dexie queries
   const allHabits = useLiveQuery(() => db.habits.toArray(), []);
-  const todayLogs = useLiveQuery(() => db.habitLogs.where('date').equals(todayStr).toArray(), [todayStr]);
-  const allCompletedLogs = useLiveQuery(
-    () => db.habitLogs.filter((l) => l.status === 'completed').toArray(),
-    []
-  );
+  const allLogs = useLiveQuery(() => db.habitLogs.toArray(), []);
+  const allAudits = useLiveQuery(() => db.auditRecords.toArray(), []);
 
-  // Build lookup maps
-  const todayLogMap = new Map<string, HabitLog>(todayLogs?.map((l) => [l.habitId, l]) || []);
+  // Compute live streaks for all habits
+  const streakMap = useMemo(() => {
+    if (!allHabits || !allLogs) return new Map<string, HabitStreakResult>();
 
-  const successCountsByHabit = new Map<string, number>();
-  if (allCompletedLogs) {
-    for (const log of allCompletedLogs) {
-      successCountsByHabit.set(log.habitId, (successCountsByHabit.get(log.habitId) || 0) + 1);
+    const logsByHabit = new Map<string, HabitLog[]>();
+    for (const log of allLogs) {
+      if (!logsByHabit.has(log.habitId)) {
+        logsByHabit.set(log.habitId, []);
+      }
+      logsByHabit.get(log.habitId)!.push(log);
     }
-  }
+
+    const auditsByHabit = new Map<string, AuditRecord[]>();
+    if (allAudits) {
+      for (const audit of allAudits) {
+        if (!auditsByHabit.has(audit.habitId)) {
+          auditsByHabit.set(audit.habitId, []);
+        }
+        auditsByHabit.get(audit.habitId)!.push(audit);
+      }
+    }
+
+    const map = new Map<string, HabitStreakResult>();
+    for (const habit of allHabits) {
+      const hLogs = logsByHabit.get(habit.id) || [];
+      const hAudits = auditsByHabit.get(habit.id) || [];
+      const pausedRanges = StreakEngine.extractPausedRanges(hAudits, habit);
+      map.set(
+        habit.id,
+        StreakCalculator.calculateStreak(habit, hLogs, {
+          evaluationDate: todayStr,
+          pausedRanges
+        })
+      );
+    }
+    return map;
+  }, [allHabits, allLogs, allAudits, todayStr]);
+
+  // Today log lookup map
+  const todayLogMap = useMemo(() => {
+    const map = new Map<string, HabitLog>();
+    if (allLogs) {
+      for (const log of allLogs) {
+        if (log.date === todayStr) {
+          map.set(log.habitId, log);
+        }
+      }
+    }
+    return map;
+  }, [allLogs, todayStr]);
 
   // Filter habits
   const filteredHabits = (allHabits || []).filter((habit) => {
@@ -118,7 +160,7 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
       setConfirmDialog({
         isOpen: true,
         title: 'Pause Habit Commitment?',
-        description: `Pausing "${habit.title}" will preserve all historical logs and prevent unscheduled misses. You can resume at any time.`,
+        description: `Pausing "${habit.title}" will preserve all historical streak records and prevent unrecorded misses. You can resume at any time.`,
         confirmLabel: 'Pause Habit',
         variant: 'warning',
         onConfirm: async () => {
@@ -136,7 +178,7 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
       setConfirmDialog({
         isOpen: true,
         title: 'Archive Habit?',
-        description: `Archiving "${habit.title}" removes it from daily tracking while permanently safeguarding all historical data.`,
+        description: `Archiving "${habit.title}" removes it from active daily tracking while permanently safeguarding all historical streak records.`,
         confirmLabel: 'Archive Habit',
         variant: 'warning',
         onConfirm: async () => {
@@ -172,12 +214,12 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold font-display text-slate-100">
-              Habit Management & Architecture
+              Independent Streak Architect
             </h2>
-            <Badge variant="gold" size="sm">M2 Engine Active</Badge>
+            <Badge variant="gold" size="sm">Strict Engine Active</Badge>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Independently configured abstinence, completion, and quantitative habits persisted in IndexedDB.
+            Every habit maintains its own independent streak. Consecutive scheduled adherence without compromise.
           </p>
         </div>
 
@@ -264,7 +306,7 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
               habit.endDate
             );
             const todayLog = todayLogMap.get(habit.id);
-            const totalSuccess = successCountsByHabit.get(habit.id) || 0;
+            const streak = streakMap.get(habit.id);
 
             return (
               <HabitCard
@@ -272,7 +314,8 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
                 habit={habit}
                 isScheduledToday={isScheduled}
                 todayLog={todayLog}
-                totalSuccessDays={totalSuccess}
+                totalSuccessDays={streak?.totalSuccessfulDays || 0}
+                streak={streak}
                 onCheckIn={handleCheckIn}
                 onViewDetails={(h) => setSelectedHabitId(h.id)}
                 onEdit={handleOpenEdit}

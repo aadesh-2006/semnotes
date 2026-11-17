@@ -1,7 +1,10 @@
+import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
 import { type Habit, type HabitLog } from '../../core/domain/types';
 import { formatScheduleSummary } from '../../core/services/scheduleService';
+import { StreakCalculator } from '../../core/streak/streakCalculator';
+import { StreakEngine } from '../../core/streak/streakEngine';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -16,7 +19,10 @@ import {
   Pause,
   Play,
   RefreshCw,
-  Clock
+  Clock,
+  Flame,
+  Trophy,
+  Activity
 } from 'lucide-react';
 
 interface HabitDetailViewProps {
@@ -36,6 +42,8 @@ export function HabitDetailView({
   onPauseToggle,
   onArchiveToggle
 }: HabitDetailViewProps) {
+  const todayStr = formatCalendarDate(new Date());
+
   const habit = useLiveQuery(() => db.habits.get(habitId), [habitId]);
   const logs = useLiveQuery(
     () => db.habitLogs.where('habitId').equals(habitId).reverse().sortBy('date'),
@@ -46,7 +54,15 @@ export function HabitDetailView({
     [habitId]
   );
 
-
+  // Compute full deterministic streak metrics
+  const streak = useMemo(() => {
+    if (!habit || !logs) return undefined;
+    const pausedRanges = auditRecords ? StreakEngine.extractPausedRanges(auditRecords, habit) : [];
+    return StreakCalculator.calculateStreak(habit, logs, {
+      evaluationDate: todayStr,
+      pausedRanges
+    });
+  }, [habit, logs, auditRecords, todayStr]);
 
   if (!habit) {
     return (
@@ -62,11 +78,6 @@ export function HabitDetailView({
   const scheduleSummary = formatScheduleSummary(habit.schedule);
   const isAbstinence = habit.type === 'abstinence';
   const isQuantitative = habit.type === 'quantitative';
-
-  const totalLogs = logs?.length || 0;
-  const successfulDays = logs?.filter((l) => l.status === 'completed').length || 0;
-  const setbackDays = logs?.filter((l) => l.status === 'failed').length || 0;
-  const adherenceRate = totalLogs > 0 ? Math.round((successfulDays / totalLogs) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -101,7 +112,7 @@ export function HabitDetailView({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => onCheckIn(habit, formatCalendarDate(new Date()))}
+            onClick={() => onCheckIn(habit, todayStr)}
             className="gap-1.5"
           >
             <Plus className="w-4 h-4" />
@@ -159,87 +170,119 @@ export function HabitDetailView({
         </Card>
       )}
 
-      {/* Real Statistics derived from DB */}
+      {/* Primary Streak Metrics Grid (Section 2 & 7) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-xl bg-obsidian-850 border border-obsidian-750">
-          <span className="text-xs text-slate-400 block uppercase tracking-wider">Total Recorded Days</span>
-          <span className="text-2xl font-bold font-mono text-slate-100 mt-1 block">
-            {totalLogs}
+        {/* Current Streak */}
+        <div className="p-4 rounded-xl bg-gradient-to-br from-obsidian-800 to-obsidian-850 border border-gold-600/50 shadow-gold-sm">
+          <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider">
+            <span>Current Streak</span>
+            <Flame className="w-4 h-4 text-gold-400" />
+          </div>
+          <span className="text-3xl font-bold font-mono text-gold-300 mt-2 block">
+            {streak?.currentStreak ?? 0}
+            <span className="text-xs font-normal text-slate-400 ml-1">days</span>
           </span>
-          <span className="text-[11px] text-slate-400">Canonical database entries</span>
+          <span className="text-[11px] text-slate-400 block mt-1">
+            {streak?.currentStreakStartDate
+              ? `Started on ${streak.currentStreakStartDate}`
+              : 'No active continuous streak'}
+          </span>
         </div>
 
+        {/* Longest Streak */}
         <div className="p-4 rounded-xl bg-obsidian-850 border border-obsidian-750">
-          <span className="text-xs text-slate-400 block uppercase tracking-wider">
-            {isAbstinence ? 'Clean / Maintained' : 'Completed Target'}
+          <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider">
+            <span>All-Time Longest</span>
+            <Trophy className="w-4 h-4 text-amber-400" />
+          </div>
+          <span className="text-3xl font-bold font-mono text-slate-100 mt-2 block">
+            {streak?.longestStreak ?? 0}
+            <span className="text-xs font-normal text-slate-400 ml-1">days</span>
           </span>
-          <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">
-            {successfulDays}
+          <span className="text-[11px] text-slate-400 block mt-1">
+            {streak?.longestStreakRange
+              ? `${streak.longestStreakRange.startDate} to ${streak.longestStreakRange.endDate}`
+              : 'Preserved permanently'}
           </span>
-          <span className="text-[11px] text-slate-400">Adhered commitments</span>
         </div>
 
+        {/* Success Rate */}
         <div className="p-4 rounded-xl bg-obsidian-850 border border-obsidian-750">
-          <span className="text-xs text-slate-400 block uppercase tracking-wider">
-            {isAbstinence ? 'Setbacks' : 'Missed Days'}
+          <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider">
+            <span>Success Adherence</span>
+            <Activity className="w-4 h-4 text-emerald-400" />
+          </div>
+          <span className="text-3xl font-bold font-mono text-emerald-400 mt-2 block">
+            {streak?.successPercentage ?? 0}%
           </span>
-          <span className="text-2xl font-bold font-mono text-red-400 mt-1 block">
-            {setbackDays}
+          <span className="text-[11px] text-slate-400 block mt-1">
+            {streak?.totalSuccessfulDays ?? 0} of {streak?.totalScheduledDays ?? 0} scheduled
           </span>
-          <span className="text-[11px] text-slate-400">Audited honest resets</span>
         </div>
 
+        {/* Next Scheduled Day */}
         <div className="p-4 rounded-xl bg-obsidian-850 border border-obsidian-750">
-          <span className="text-xs text-slate-400 block uppercase tracking-wider">Success Rate</span>
-          <span className="text-2xl font-bold font-mono text-gold-300 mt-1 block">
-            {adherenceRate}%
+          <div className="flex items-center justify-between text-xs text-slate-400 uppercase tracking-wider">
+            <span>Next Commitment</span>
+            <Calendar className="w-4 h-4 text-sky-400" />
+          </div>
+          <span className="text-xl font-bold font-mono text-slate-100 mt-2 block">
+            {streak?.nextScheduledDate || 'None'}
           </span>
-          <span className="text-[11px] text-slate-400">Historical adherence</span>
+          <span className="text-[11px] text-slate-400 block mt-1 truncate">
+            Schedule: {scheduleSummary}
+          </span>
         </div>
       </div>
 
-      {/* Configuration Specifications */}
+      {/* Streak Forensic Breakdown */}
       <Card className="border-obsidian-750 bg-obsidian-850">
         <CardHeader className="pb-3">
           <CardTitle className="text-sm uppercase tracking-wider text-slate-300">
-            Habit Configuration & Invariants
+            Strict Streak Invariants & Status
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs pt-1">
+        <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1 font-mono">
           <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-            <span className="text-slate-400 block">Schedule:</span>
-            <span className="text-slate-100 font-semibold mt-0.5 block">{scheduleSummary}</span>
-            <span className="text-[11px] text-slate-400">Non-scheduled days excused</span>
+            <span className="text-slate-400 block font-sans">Total Successful Days:</span>
+            <span className="text-emerald-400 font-bold text-base mt-0.5 block">
+              {streak?.totalSuccessfulDays ?? 0}
+            </span>
           </div>
 
-          {isQuantitative && (
-            <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-              <span className="text-slate-400 block">Target Threshold:</span>
-              <span className="text-gold-300 font-mono font-bold mt-0.5 block">
-                {habit.targetConstraint === 'at_most' ? '≤' : '≥'} {habit.targetValue} {habit.unit}
-              </span>
-              <span className="text-[11px] text-slate-400">Determined automatically</span>
-            </div>
-          )}
+          <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
+            <span className="text-slate-400 block font-sans">Total Failed / Setbacks:</span>
+            <span className="text-red-400 font-bold text-base mt-0.5 block">
+              {streak?.totalFailedDays ?? 0}
+            </span>
+          </div>
 
           <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-            <span className="text-slate-400 block">Audit Tracking:</span>
-            <span className="text-emerald-400 font-semibold mt-0.5 block">Active</span>
-            <span className="text-[11px] text-slate-400">{auditRecords?.length || 0} audit log entries</span>
+            <span className="text-slate-400 block font-sans">Unrecorded Missed Days:</span>
+            <span className="text-amber-400 font-bold text-base mt-0.5 block">
+              {streak?.totalMissedDays ?? 0}
+            </span>
+          </div>
+
+          <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
+            <span className="text-slate-400 block font-sans">Last Successful Date:</span>
+            <span className="text-gold-300 font-bold text-base mt-0.5 block">
+              {streak?.lastSuccessfulDate || 'None'}
+            </span>
           </div>
         </CardContent>
       </Card>
 
-      {/* Historical Daily Logs Table */}
+      {/* Detailed Timeline Table */}
       <Card className="border-obsidian-750 bg-obsidian-850">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-base flex items-center gap-2">
               <Calendar className="w-4 h-4 text-gold-400" />
-              <span>Historical Daily Records</span>
+              <span>Full Historical Streak Timeline</span>
             </CardTitle>
             <CardDescription>
-              Every recorded check-in, measured value, note, and correction.
+              Chronological day-by-day sequence showing scheduled status, logs, and streak impact.
             </CardDescription>
           </div>
 
@@ -254,85 +297,120 @@ export function HabitDetailView({
         </CardHeader>
 
         <CardContent>
-          {!logs || logs.length === 0 ? (
+          {!streak || streak.timeline.length === 0 ? (
             <div className="p-8 text-center text-slate-400 border border-dashed border-obsidian-750 rounded-xl">
               <Clock className="w-8 h-8 mx-auto text-slate-500 mb-2" />
-              <p className="text-sm font-medium text-slate-300">No logs recorded yet</p>
+              <p className="text-sm font-medium text-slate-300">No timeline data available</p>
               <p className="text-xs text-slate-400 mt-1">
-                Fulfill your standard today to establish your first sovereign record.
+                This habit has not started yet or has no scheduled days prior to today.
               </p>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => onCheckIn(habit, formatCalendarDate(new Date()))}
-                className="mt-4"
-              >
-                Log Today's Entry
-              </Button>
             </div>
           ) : (
-            <div className="divide-y divide-obsidian-750/70 overflow-x-auto">
+            <div className="divide-y divide-obsidian-750/70 overflow-x-auto max-h-[500px]">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="text-slate-400 border-b border-obsidian-750 font-mono uppercase text-[10px]">
+                  <tr className="text-slate-400 border-b border-obsidian-750 font-mono uppercase text-[10px] sticky top-0 bg-obsidian-850">
                     <th className="py-2.5 px-3">Date</th>
-                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3">Schedule</th>
+                    <th className="py-2.5 px-3">Evaluated Status</th>
+                    <th className="py-2.5 px-3">Streak Impact</th>
                     {isQuantitative && <th className="py-2.5 px-3">Measured Value</th>}
-                    <th className="py-2.5 px-3">Notes / Reflection</th>
+                    <th className="py-2.5 px-3">Notes</th>
                     <th className="py-2.5 px-3 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-obsidian-750/50">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-obsidian-800/40 transition-colors">
-                      <td className="py-3 px-3 font-mono font-medium text-slate-200">
-                        {log.date}
-                      </td>
-
-                      <td className="py-3 px-3">
-                        {log.status === 'completed' ? (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 font-mono text-[11px] font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            {isAbstinence ? 'Maintained' : 'Completed'}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-[11px] font-semibold">
-                            <XCircle className="w-3.5 h-3.5" />
-                            {isAbstinence ? 'Setback' : 'Missed'}
-                          </span>
-                        )}
-                      </td>
-
-                      {isQuantitative && (
-                        <td className="py-3 px-3 font-mono text-slate-300">
-                          {log.numericValue !== undefined ? `${log.numericValue} ${habit.unit}` : '—'}
-                        </td>
-                      )}
-
-                      <td className="py-3 px-3 text-slate-400 max-w-xs truncate">
-                        {log.notes || <span className="text-slate-600 italic">No notes</span>}
-                        {log.correctedAt && (
-                          <span
-                            className="block text-[10px] text-amber-400 font-mono mt-0.5"
-                            title={log.correctionReason}
-                          >
-                            Corrected: {log.correctionReason || 'Audited change'}
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3 px-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onCheckIn(habit, log.date, log)}
-                          className="text-xs h-7 px-2 text-slate-400 hover:text-gold-300"
+                  {streak.timeline
+                    .slice()
+                    .reverse()
+                    .map((item) => {
+                      return (
+                        <tr
+                          key={item.date}
+                          className={`hover:bg-obsidian-800/40 transition-colors ${
+                            item.breaksStreak ? 'bg-red-950/10' : ''
+                          }`}
                         >
-                          Correct
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                          <td className="py-3 px-3 font-mono font-medium text-slate-200">
+                            {item.date}
+                          </td>
+
+                          <td className="py-3 px-3 font-sans">
+                            {item.isPaused ? (
+                              <Badge variant="warning" size="sm">Paused</Badge>
+                            ) : item.isScheduled ? (
+                              <span className="text-slate-300">Scheduled</span>
+                            ) : (
+                              <span className="text-slate-500">Unscheduled</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-3">
+                            {item.status === 'completed' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 font-mono text-[11px] font-semibold">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                {isAbstinence ? 'Maintained' : 'Completed'}
+                              </span>
+                            ) : item.status === 'failed' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-[11px] font-semibold">
+                                <XCircle className="w-3.5 h-3.5" />
+                                {isAbstinence ? 'Setback' : 'Failed'}
+                              </span>
+                            ) : item.status === 'missed' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-950/40 border border-red-800/30 text-red-400 font-mono text-[11px]">
+                                Missed
+                              </span>
+                            ) : item.status === 'pending' ? (
+                              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-gold-950/40 border border-gold-800/40 text-gold-300 font-mono text-[11px]">
+                                Pending Today
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 font-mono text-[11px]">Rest Day</span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-3 font-mono text-[11px]">
+                            {item.contributesToStreak ? (
+                              <span className="text-emerald-400 font-bold">+1 Increment</span>
+                            ) : item.breaksStreak ? (
+                              <span className="text-red-400 font-bold">Resets to 0</span>
+                            ) : (
+                              <span className="text-slate-500">Neutral</span>
+                            )}
+                          </td>
+
+                          {isQuantitative && (
+                            <td className="py-3 px-3 font-mono text-slate-300">
+                              {item.log?.numericValue !== undefined
+                                ? `${item.log.numericValue} ${habit.unit}`
+                                : '—'}
+                            </td>
+                          )}
+
+                          <td className="py-3 px-3 text-slate-400 max-w-xs truncate">
+                            {item.log?.notes || <span className="text-slate-600 italic">None</span>}
+                            {item.log?.correctedAt && (
+                              <span className="block text-[10px] text-amber-400 font-mono mt-0.5">
+                                Corrected: {item.log.correctionReason || 'Audited'}
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-3 text-right">
+                            {item.isScheduled && !item.isPaused && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onCheckIn(habit, item.date, item.log)}
+                                className="text-xs h-7 px-2 text-slate-400 hover:text-gold-300"
+                              >
+                                {item.log ? 'Correct' : 'Log'}
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>

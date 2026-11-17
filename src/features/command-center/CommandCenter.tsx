@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
-import { type Habit, type HabitLog } from '../../core/domain/types';
+import { type Habit, type HabitLog, type AuditRecord } from '../../core/domain/types';
+import type { HabitStreakResult } from '../../core/streak/streakTypes';
 import { HabitLogService } from '../../core/services/habitLogService';
+import { StreakCalculator } from '../../core/streak/streakCalculator';
+import { StreakEngine } from '../../core/streak/streakEngine';
 import { isScheduledDay } from '../../core/services/scheduleService';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { MetricCard } from '../../components/ui/metric-card';
@@ -22,7 +25,8 @@ import {
   Check,
   Plus,
   Shield,
-  Clock
+  Clock,
+  Trophy
 } from 'lucide-react';
 
 interface CommandCenterProps {
@@ -35,26 +39,64 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
 
   // Reactive Dexie Live Queries
   const habits = useLiveQuery(() => db.habits.where('status').equals('active').toArray(), []);
-  const todayLogs = useLiveQuery(() => db.habitLogs.where('date').equals(todayStr).toArray(), [todayStr]);
-  const allCompletedLogs = useLiveQuery(
-    () => db.habitLogs.filter((l) => l.status === 'completed').toArray(),
-    []
-  );
+  const allLogs = useLiveQuery(() => db.habitLogs.toArray(), []);
+  const allAudits = useLiveQuery(() => db.auditRecords.toArray(), []);
 
   // Check-in modal state
   const [checkInHabit, setCheckInHabit] = useState<Habit | null>(null);
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Build lookups
-  const todayLogMap = new Map<string, HabitLog>(todayLogs?.map((l) => [l.habitId, l]) || []);
+  // Compute live streaks for all habits
+  const streakMap = useMemo(() => {
+    if (!habits || !allLogs) return new Map<string, HabitStreakResult>();
 
-  const totalSuccessCountByHabit = new Map<string, number>();
-  if (allCompletedLogs) {
-    for (const log of allCompletedLogs) {
-      totalSuccessCountByHabit.set(log.habitId, (totalSuccessCountByHabit.get(log.habitId) || 0) + 1);
+    const logsByHabit = new Map<string, HabitLog[]>();
+    for (const log of allLogs) {
+      if (!logsByHabit.has(log.habitId)) {
+        logsByHabit.set(log.habitId, []);
+      }
+      logsByHabit.get(log.habitId)!.push(log);
     }
-  }
+
+    const auditsByHabit = new Map<string, AuditRecord[]>();
+    if (allAudits) {
+      for (const audit of allAudits) {
+        if (!auditsByHabit.has(audit.habitId)) {
+          auditsByHabit.set(audit.habitId, []);
+        }
+        auditsByHabit.get(audit.habitId)!.push(audit);
+      }
+    }
+
+    const map = new Map<string, HabitStreakResult>();
+    for (const habit of habits) {
+      const hLogs = logsByHabit.get(habit.id) || [];
+      const hAudits = auditsByHabit.get(habit.id) || [];
+      const pausedRanges = StreakEngine.extractPausedRanges(hAudits, habit);
+      map.set(
+        habit.id,
+        StreakCalculator.calculateStreak(habit, hLogs, {
+          evaluationDate: todayStr,
+          pausedRanges
+        })
+      );
+    }
+    return map;
+  }, [habits, allLogs, allAudits, todayStr]);
+
+  // Today log lookup map
+  const todayLogMap = useMemo(() => {
+    const map = new Map<string, HabitLog>();
+    if (allLogs) {
+      for (const log of allLogs) {
+        if (log.date === todayStr) {
+          map.set(log.habitId, log);
+        }
+      }
+    }
+    return map;
+  }, [allLogs, todayStr]);
 
   // Derive metrics purely from actual database data
   const totalActiveCount = habits?.length || 0;
@@ -83,7 +125,18 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
       ? Math.round((completedTodayCount / scheduledTodayHabits.length) * 100)
       : 0;
 
-  const totalAllTimeCleanDays = allCompletedLogs?.length || 0;
+  // Real streak counts derived from StreakCalculator
+  let activeStreaksCount = 0;
+  let allTimeLongestStreak = 0;
+
+  for (const [, streak] of streakMap) {
+    if (streak.currentStreak > 0) {
+      activeStreaksCount++;
+    }
+    if (streak.longestStreak > allTimeLongestStreak) {
+      allTimeLongestStreak = streak.longestStreak;
+    }
+  }
 
   const handleOpenCheckIn = (habit: Habit) => {
     setCheckInHabit(habit);
@@ -114,7 +167,7 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge variant="gold" size="sm" className="font-mono">
-                COMMAND CENTER &bull; M2
+                COMMAND CENTER &bull; M3
               </Badge>
               <span className="text-xs text-slate-400 font-mono">
                 {formatFriendlyDate(new Date())}
@@ -155,7 +208,7 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           <span className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-slate-300">
-              Reactive IndexedDB: <strong>{totalActiveCount} Active Habits</strong>
+              Strict Streak Engine: <strong>{activeStreaksCount} Active Streaks</strong>
             </span>
           </span>
           <span className="text-[11px] font-mono text-gold-400">
@@ -167,10 +220,10 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
       {/* 4-Column Real Metrics Cards (Zero Mock Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="Active Commitments"
-          value={totalActiveCount}
-          unit="habits"
-          subtext={`${scheduledTodayHabits.length} scheduled for today`}
+          label="Active Streaks"
+          value={activeStreaksCount}
+          unit={`/ ${totalActiveCount} habits`}
+          subtext="Independently maintained unbroken"
           icon={<Flame className="w-5 h-5 text-gold-400" />}
           highlight={true}
         />
@@ -183,18 +236,18 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           trend={{ value: `${completionPercentage}%`, isPositive: completionPercentage >= 50 }}
         />
         <MetricCard
-          label="Total Clean Days"
-          value={totalAllTimeCleanDays}
-          unit="completed days"
-          subtext="Persisted in local IndexedDB"
-          icon={<Shield className="w-5 h-5 text-gold-300" />}
+          label="All-Time Longest"
+          value={allTimeLongestStreak}
+          unit="days"
+          subtext="Preserved permanently across resets"
+          icon={<Trophy className="w-5 h-5 text-amber-400" />}
         />
         <MetricCard
           label="Pending Today"
           value={pendingTodayCount}
           unit="commitments"
           subtext={failedTodayCount > 0 ? `${failedTodayCount} setbacks logged` : 'Zero setbacks logged today'}
-          icon={<Clock className="w-5 h-5 text-amber-400" />}
+          icon={<Clock className="w-5 h-5 text-slate-400" />}
         />
       </div>
 
@@ -224,7 +277,7 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
                 onClick={() => onNavigate('streaks')}
                 className="text-xs text-gold-400 hover:text-gold-300"
               >
-                <span>Manage All</span>
+                <span>Manage Streaks</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </CardHeader>
@@ -266,7 +319,8 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
                   const isCompleted = log?.status === 'completed';
                   const isFailed = log?.status === 'failed' || log?.status === 'missed';
                   const isAbstinence = habit.type === 'abstinence';
-                  const totalSuccess = totalSuccessCountByHabit.get(habit.id) || 0;
+                  const streak = streakMap.get(habit.id);
+                  const currentStreak = streak?.currentStreak ?? 0;
 
                   return (
                     <div
@@ -308,8 +362,9 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
                           <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
                             <span className="capitalize">{habit.category}</span>
                             <span>&bull;</span>
-                            <span className="font-mono text-gold-400">
-                              {totalSuccess} total clean days
+                            <span className="font-mono text-gold-400 font-semibold flex items-center gap-1">
+                              <Flame className="w-3 h-3 text-gold-400" />
+                              {currentStreak}d streak
                             </span>
                             {habit.targetValue && (
                               <>
@@ -405,8 +460,8 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-gold-400" />
-                  <span>Sovereign Commitments</span>
+                  <Flame className="w-4 h-4 text-gold-400" />
+                  <span>Independent Streaks</span>
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -424,7 +479,10 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
 
             <CardContent className="space-y-3 pt-1">
               {(habits || []).slice(0, 3).map((h) => {
-                const totalSuccess = totalSuccessCountByHabit.get(h.id) || 0;
+                const streak = streakMap.get(h.id);
+                const current = streak?.currentStreak ?? 0;
+                const longest = streak?.longestStreak ?? 0;
+
                 return (
                   <div
                     key={h.id}
@@ -433,13 +491,14 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
                   >
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-slate-200 truncate">{h.title}</span>
-                      <Badge variant="gold-subtle" size="sm" className="capitalize">
-                        {h.type}
-                      </Badge>
+                      <div className="flex items-center gap-1 font-mono text-gold-300 font-bold">
+                        <Flame className="w-3.5 h-3.5 text-gold-400" />
+                        <span>{current}d streak</span>
+                      </div>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
                       <span>Category: {h.category}</span>
-                      <span className="text-gold-300 font-bold">{totalSuccess} days clean</span>
+                      <span className="text-slate-300">All-time record: {longest}d</span>
                     </div>
                   </div>
                 );

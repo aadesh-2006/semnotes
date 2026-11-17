@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation) & M2 (Habit Management Engine) Complete
+**Status:** M1 (Foundation), M2 (Habit Management), & M3 (Strict Streak Engine) Complete
 
 ---
 
@@ -14,21 +14,22 @@ SEMNÓTĒS is architected with strict separation of concerns across four key lay
 ┌────────────────────────────────────────────────────────┐
 │                   Presentation Layer                   │
 │   (React 19, Tailwind CSS, Lucide, AppShell, Views)    │
-│   - CommandCenter (Reactive live dashboard)            │
-│   - StreaksView (Habits management & filtering)        │
-│   - HabitDetailView (Historical logs & stats)          │
+│   - CommandCenter (Live active streak metrics)         │
+│   - StreaksView (Independent streak cards)             │
+│   - HabitDetailView (Timeline, Forensic streak data)   │
 │   - HabitFormModal & CheckInModal                      │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                    Application Layer                   │
-│    (HabitService, HabitLogService, ScheduleService,    │
-│     HabitDashboardService, Dexie Live Queries)         │
+│    (StreakEngine, HabitService, HabitLogService,       │
+│     ScheduleService, HabitDashboardService)            │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                   Domain Engine Layer                  │
-│  (Streak Engine [M3], Zod Entities, Validation Rules)  │
+│    (StreakCalculator: Pure deterministic math,         │
+│     StreakUtils, Zod Entities, Invariant Rules)        │
 │             * Zero React / UI Dependencies *           │
 └───────────────────────────┬────────────────────────────┘
                             │
@@ -38,11 +39,46 @@ SEMNÓTĒS is architected with strict separation of concerns across four key lay
 └────────────────────────────────────────────────────────┘
 ```
 
-### Key Decisions:
-1. **Decoupled Business Logic:** All operations (`createHabit`, `updateHabit`, `recordCheckIn`, `correctCheckIn`, `isScheduledDay`, `getDashboardMetrics`) are standalone services in `src/core/services/` with strict Zod runtime verification and zero React dependencies.
-2. **Local-First Sovereign Storage:** Browser IndexedDB (via Dexie.js v4) is the canonical source of truth. The application operates 100% offline.
-3. **Auditability & Safe Corrections:** Accidental check-ins or schedule modifications create immutable historical audit entries in `db.auditRecords` (`action`, `previousStatus`, `newStatus`, `previousValue`, `newValue`, `reason`, `timestamp`).
-4. **Duplicate Prevention:** Daily logs use atomic Dexie transactions on compound index `[habitId+date]`, guaranteeing exactly one canonical log per habit per local date while permitting auditable in-place modifications.
+---
+
+## 2. Independent Strict Streak Engine (Formal Rules & Math)
+
+### A. Mathematical Formulation
+Let $H$ be a habit with schedule $S$, start date $D_0$, and evaluation date $D_{\text{eval}}$.
+
+For every local calendar date $d \in [D_0, D_{\text{eval}}]$:
+1. **Unscheduled Exclusion:**
+   If $d$ is not a scheduled day in $S$:
+   $$\text{status}(d) = \text{skipped} \implies \text{does not increment}, \quad \text{does not break streak}$$
+2. **Paused Interval Exclusion:**
+   If $d$ falls within any recorded pause interval:
+   $$\text{status}(d) = \text{skipped} \implies \text{does not increment}, \quad \text{does not break streak}$$
+3. **Scheduled Adherence:**
+   For any scheduled, unpaused day $d$:
+   - If log exists and is successful: $\text{status}(d) = \text{completed} \implies \text{contributes to streak}$
+   - If log exists and is failed: $\text{status}(d) = \text{failed} \implies \text{breaks streak}$
+   - If NO log exists and $d < D_{\text{eval}}$: $\text{status}(d) = \text{missed} \implies \text{breaks streak}$
+   - If NO log exists and $d = D_{\text{eval}}$: $\text{status}(d) = \text{pending} \implies \text{does not break streak yet}$
+
+### B. Current Streak Formula
+Let $\{s_1, s_2, \dots, s_k\}$ be the ordered sequence of scheduled, unpaused days up to $D_{\text{eval}}$.
+- If $s_k = D_{\text{eval}}$ and $\text{status}(s_k) = \text{pending}$: the active streak is evaluated starting from $s_{k-1}$ (the latest completed scheduled day).
+- If $\text{status}(s_k) = \text{failed}$: $\text{CurrentStreak} = 0$.
+- Otherwise:
+  $$\text{CurrentStreak} = \max \{ n \ge 0 \mid \forall i \in [k - n + 1, k], \, \text{status}(s_i) = \text{completed} \}$$
+
+### C. Longest Streak Formula
+Across all contiguous sequences of completed scheduled days:
+$$\text{LongestStreak} = \max \left( \text{cachedLongest}, \max_{i \le j} \left\{ j - i + 1 \mid \forall m \in [i, j], \, \text{status}(s_m) = \text{completed} \right\} \right)$$
+The historical longest streak is monotonic non-decreasing ($L_{t+1} \ge L_t$) and is preserved permanently across setbacks.
+
+### D. True Streak Independence
+$$\forall H_a, H_b \quad (a \ne b) \implies \text{Streak}(H_a) \perp \text{Streak}(H_b)$$
+Resetting or failing $H_a$ has zero effect on the streak calculations of $H_b$.
+
+### E. Timezone and Calendar Date Safety
+- All dates are evaluated as local ISO date strings (`YYYY-MM-DD`).
+- Date navigation and additions use local date components (`new Date(y, m - 1, d + delta)`), completely avoiding UTC offset flips or daylight-saving anomalies.
 
 ---
 

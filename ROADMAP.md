@@ -6,7 +6,7 @@
 | :--- | :--- | :---: | :--- |
 | **M1** | **Project Foundation** | **DONE** | Scaffolding, Obsidian & Gold design system, shell, Command Center, documentation. |
 | **M2** | **Habit Management** | **DONE** | Full CRUD, Abstinence/Completion/Quantitative types, schedules, live IndexedDB. |
-| **M3** | **Strict Streak Engine** | Planned | Deterministic calculations, strict reset logic, audit records, timezone safety. |
+| **M3** | **Strict Streak Engine** | **DONE** | Deterministic calculations, strict reset logic, audit records, timezone safety. |
 | **M4** | **Milestones & Rewards** | Planned | Custom milestone schedules, reward claims, celebration triggers. |
 | **M5** | **Journal & Reflection** | Planned | Private journal, urge diagnostic logger, mood & prompt tracking. |
 | **M6** | **Discipline Analytics** | Planned | Rolling 30-day score, Recharts visualizations, habit breakdown. |
@@ -39,12 +39,15 @@
 - [x] Duplicate check-in prevention via compound index transactions (`[habitId+date]`).
 - [x] Automated test suite covering 15 scenarios (20/20 Vitest tests passing).
 
-### M3 — Strict Streak Engine
-- [ ] Pure functional streak calculation algorithm.
-- [ ] Zero-compromise reset policy on failed or missed days.
-- [ ] Permanent longest streak preservation.
-- [ ] Audit log trail for accidental check-in corrections.
-- [ ] Full Vitest suite for timezone boundaries and calendar edge cases.
+### M3 — Strict Streak Engine (Completed)
+- [x] Pure functional streak calculation algorithm (`StreakCalculator`).
+- [x] Zero-compromise reset policy on failed or past missed days.
+- [x] Permanent longest streak preservation (`longestStreakRange`).
+- [x] Unscheduled day exclusion (MWF habits calculate unbroken sequences across non-scheduled days).
+- [x] Paused day exclusion (scheduled days during paused intervals do not count as failures).
+- [x] Today's pending check-in handling (preserves unbroken streak from yesterday without premature reset).
+- [x] Forensic timeline with `Streak Impact` indicators (`+1 Increment`, `Resets to 0`, `Neutral`).
+- [x] Automated test suite covering 20 streak scenarios (38/38 Vitest tests passing).
 
 ### M4 — Custom Milestones & Rewards
 - [ ] Unlimited custom threshold day targets per habit.
