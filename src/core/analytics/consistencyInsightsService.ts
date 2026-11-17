@@ -1,4 +1,5 @@
 import { parseCalendarDate } from '../utils';
+import { WEEKDAY_NAMES } from './analyticsDateUtils';
 import type {
   DailyAdherencePoint,
   HabitPerformanceMetric,
@@ -17,11 +18,11 @@ export class ConsistencyInsightsService {
     const insights: ConsistencyInsight[] = [];
 
     // 1. Weekday Consistency Analysis (Requires at least 5 evaluated commitments per day to report)
+    // Date-independent, deterministic weekday buckets across all years and leap years
     const weekdayBuckets = new Map<number, { dayName: string; completed: number; evaluated: number }>();
     for (let dayIdx = 0; dayIdx < 7; dayIdx++) {
-      const sampleDate = new Date(2026, 10, 15 + dayIdx); // 15 Nov 2026 was Sunday
       weekdayBuckets.set(dayIdx, {
-        dayName: new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(sampleDate),
+        dayName: WEEKDAY_NAMES[dayIdx],
         completed: 0,
         evaluated: 0
       });

@@ -63,11 +63,33 @@ export function getPresetDateRange(
 }
 
 /**
+ * Canonical weekday names indexed by Date.prototype.getDay() (0 = Sunday, 6 = Saturday).
+ * Date-independent and deterministic across all years, leap years, and calendars.
+ */
+export const WEEKDAY_NAMES: readonly string[] = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday'
+] as const;
+
+/**
+ * Returns canonical weekday name for an integer day index (0 = Sunday ... 6 = Saturday).
+ */
+export function getWeekdayNameByIndex(dayIndex: number): string {
+  const normalized = ((dayIndex % 7) + 7) % 7;
+  return WEEKDAY_NAMES[normalized];
+}
+
+/**
  * Returns weekday name for a date string (e.g. "Monday", "Wednesday").
  */
 export function getWeekdayName(dateStr: string): string {
   const dt = parseCalendarDate(dateStr);
-  return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(dt);
+  return WEEKDAY_NAMES[dt.getDay()];
 }
 
 /**
