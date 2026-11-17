@@ -1,25 +1,41 @@
 import { Modal } from '../ui/modal';
 import { Button } from '../ui/button';
-import { Flame, ShieldAlert, Timer, BookOpen } from 'lucide-react';
+import { Flame, ShieldAlert, Timer, BookOpen, Plus } from 'lucide-react';
 import type { RouteId } from '../../app/routes';
 
 interface QuickActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (route: RouteId) => void;
+  onOpenCreateHabit?: () => void;
 }
 
 export function QuickActionModal({
   isOpen,
   onClose,
-  onNavigate
+  onNavigate,
+  onOpenCreateHabit
 }: QuickActionModalProps) {
   const actions = [
+    {
+      title: 'Architect New Habit Commitment',
+      desc: 'Define an abstinence, completion, or quantitative habit.',
+      icon: Plus,
+      color: 'text-gold-400 bg-gold-950/60 border-gold-800/40',
+      action: () => {
+        onClose();
+        if (onOpenCreateHabit) {
+          onOpenCreateHabit();
+        } else {
+          onNavigate('streaks');
+        }
+      }
+    },
     {
       title: 'Fulfill Daily Habit Check-in',
       desc: 'Verify today’s scheduled discipline commitments.',
       icon: Flame,
-      color: 'text-gold-400 bg-gold-950/60 border-gold-800/40',
+      color: 'text-emerald-400 bg-emerald-950/60 border-emerald-800/40',
       action: () => {
         onNavigate('streaks');
         onClose();
@@ -49,7 +65,7 @@ export function QuickActionModal({
       title: 'Evening Sovereign Reflection',
       desc: 'Anchor subconscious character before sleep.',
       icon: BookOpen,
-      color: 'text-emerald-400 bg-emerald-950/60 border-emerald-800/40',
+      color: 'text-purple-400 bg-purple-950/60 border-purple-800/40',
       action: () => {
         onNavigate('journal');
         onClose();

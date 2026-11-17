@@ -2,6 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type {
   Habit,
   HabitLog,
+  AuditRecord,
   Milestone,
   JournalEntry,
   UrgeLog,
@@ -12,6 +13,7 @@ import type {
 export class SemnotesDatabase extends Dexie {
   habits!: Table<Habit, string>;
   habitLogs!: Table<HabitLog, string>;
+  auditRecords!: Table<AuditRecord, string>;
   milestones!: Table<Milestone, string>;
   journalEntries!: Table<JournalEntry, string>;
   urgeLogs!: Table<UrgeLog, string>;
@@ -29,6 +31,10 @@ export class SemnotesDatabase extends Dexie {
       urgeLogs: 'id, habitId, timestamp, intensity, response',
       focusSessions: 'id, habitId, startedAt, status',
       userSettings: 'id'
+    });
+
+    this.version(2).stores({
+      auditRecords: 'id, habitId, habitLogId, date, action, timestamp'
     });
   }
 }

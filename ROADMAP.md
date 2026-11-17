@@ -5,7 +5,7 @@
 | Milestone | Scope | Status | Notes |
 | :--- | :--- | :---: | :--- |
 | **M1** | **Project Foundation** | **DONE** | Scaffolding, Obsidian & Gold design system, shell, Command Center, documentation. |
-| **M2** | **Habit Management** | Planned | Habit CRUD, multi-schedule engine, category schemas, target values. |
+| **M2** | **Habit Management** | **DONE** | Full CRUD, Abstinence/Completion/Quantitative types, schedules, live IndexedDB. |
 | **M3** | **Strict Streak Engine** | Planned | Deterministic calculations, strict reset logic, audit records, timezone safety. |
 | **M4** | **Milestones & Rewards** | Planned | Custom milestone schedules, reward claims, celebration triggers. |
 | **M5** | **Journal & Reflection** | Planned | Private journal, urge diagnostic logger, mood & prompt tracking. |
@@ -28,12 +28,16 @@
 - [x] Foundation test suite passing via Vitest.
 - [x] Technical documentation (`README.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `CHANGELOG.md`).
 
-### M2 — Habit Management (Next Phase)
-- [ ] Habit creation modal with Zod validation.
-- [ ] Support for 3 habit types: Abstinence, Binary Completion, Quantitative.
-- [ ] Flexible scheduling: Daily vs Selected days of the week.
-- [ ] Habit status management: Active, Paused, Archived.
-- [ ] Habit duplicate and edit flows.
+### M2 — Habit Management (Completed)
+- [x] Habit creation and edit modal with Zod validation (`HabitFormModal`).
+- [x] Support for 3 tracking types: Abstinence, Binary Completion, Quantitative (with target & constraints).
+- [x] Flexible scheduling: Every day vs Selected weekdays (with bounds checking on start/end dates).
+- [x] Complete habit CRUD: Create, View all, Detail view, Edit, Pause/Resume, Archive/Restore.
+- [x] Confirmation dialogs for destructive/state transitions.
+- [x] Real-time reactive Dexie IndexedDB live queries across Dashboard and Habit views.
+- [x] Dedicated Habit Detail View with historical records table, statistics cards, and audit tracking.
+- [x] Duplicate check-in prevention via compound index transactions (`[habitId+date]`).
+- [x] Automated test suite covering 15 scenarios (20/20 Vitest tests passing).
 
 ### M3 — Strict Streak Engine
 - [ ] Pure functional streak calculation algorithm.

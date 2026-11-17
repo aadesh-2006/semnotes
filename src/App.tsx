@@ -11,10 +11,12 @@ import { MilestonesView } from './features/milestones/MilestonesView';
 import { RecoveryView } from './features/recovery/RecoveryView';
 import { SettingsView } from './features/settings/SettingsView';
 import { QuickActionModal } from './components/modals/QuickActionModal';
+import { HabitFormModal } from './components/modals/HabitFormModal';
 
 export function App() {
   const [currentRoute, setCurrentRoute] = useState<RouteId>('dashboard');
   const [isQuickActionOpen, setIsQuickActionOpen] = useState(false);
+  const [isCreateHabitOpen, setIsCreateHabitOpen] = useState(false);
 
   const renderCurrentView = () => {
     switch (currentRoute) {
@@ -28,7 +30,7 @@ export function App() {
       case 'streaks':
         return (
           <StreaksView
-            onOpenNewHabit={() => setIsQuickActionOpen(true)}
+            onOpenNewHabit={() => setIsCreateHabitOpen(true)}
           />
         );
       case 'calendar':
@@ -69,6 +71,13 @@ export function App() {
         isOpen={isQuickActionOpen}
         onClose={() => setIsQuickActionOpen(false)}
         onNavigate={(route) => setCurrentRoute(route)}
+        onOpenCreateHabit={() => setIsCreateHabitOpen(true)}
+      />
+
+      <HabitFormModal
+        isOpen={isCreateHabitOpen}
+        onClose={() => setIsCreateHabitOpen(false)}
+        onSuccess={() => {}}
       />
     </>
   );

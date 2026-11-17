@@ -1,116 +1,120 @@
 import { useState } from 'react';
-import {
-  Flame,
-  CheckCircle2,
-  Trophy,
-  Activity,
-  ArrowRight,
-  ShieldAlert,
-  BookOpen,
-  Check,
-  Zap
-} from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../storage/db';
+import { type Habit, type HabitLog } from '../../core/domain/types';
+import { HabitLogService } from '../../core/services/habitLogService';
+import { isScheduledDay } from '../../core/services/scheduleService';
+import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { MetricCard } from '../../components/ui/metric-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
-import { formatFriendlyDate } from '../../core/utils';
+import { CheckInModal } from '../../components/modals/CheckInModal';
+import { HabitFormModal } from '../../components/modals/HabitFormModal';
 import type { RouteId } from '../../app/routes';
+import {
+  Flame,
+  CheckCircle2,
+  ArrowRight,
+  ShieldAlert,
+  BookOpen,
+  Check,
+  Plus,
+  Shield,
+  Clock
+} from 'lucide-react';
 
 interface CommandCenterProps {
   onNavigate: (route: RouteId) => void;
   onOpenQuickAction: () => void;
 }
 
-interface PreviewHabitItem {
-  id: string;
-  title: string;
-  category: 'abstinence' | 'craft' | 'body' | 'mind';
-  type: 'abstinence' | 'completion' | 'quantitative';
-  target?: string;
-  currentStreak: number;
-  longestStreak: number;
-  completedToday: boolean;
-  frequency: string;
-}
-
 export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterProps) {
-  // Demonstration interactive state for M1 Foundation preview
-  const [habits, setHabits] = useState<PreviewHabitItem[]>([
-    {
-      id: 'h1',
-      title: 'Digital Purity & Abstinence',
-      category: 'abstinence',
-      type: 'abstinence',
-      currentStreak: 24,
-      longestStreak: 45,
-      completedToday: true,
-      frequency: 'Strict Daily'
-    },
-    {
-      id: 'h2',
-      title: 'DSA & Algorithmic Practice',
-      category: 'craft',
-      type: 'completion',
-      currentStreak: 12,
-      longestStreak: 28,
-      completedToday: true,
-      frequency: 'Daily'
-    },
-    {
-      id: 'h3',
-      title: 'Physical Conditioning (Run / Calisthenics)',
-      category: 'body',
-      type: 'quantitative',
-      target: '5,000 steps / 45m',
-      currentStreak: 8,
-      longestStreak: 15,
-      completedToday: false,
-      frequency: 'Daily'
-    },
-    {
-      id: 'h4',
-      title: 'Stoic Reading & Night Reflection',
-      category: 'mind',
-      type: 'completion',
-      currentStreak: 19,
-      longestStreak: 19,
-      completedToday: false,
-      frequency: 'Daily'
-    }
-  ]);
+  const todayStr = formatCalendarDate(new Date());
 
-  const toggleHabit = (id: string) => {
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (h.id === id) {
-          const nextState = !h.completedToday;
-          return {
-            ...h,
-            completedToday: nextState,
-            currentStreak: nextState ? h.currentStreak + 1 : Math.max(0, h.currentStreak - 1)
-          };
-        }
-        return h;
-      })
-    );
+  // Reactive Dexie Live Queries
+  const habits = useLiveQuery(() => db.habits.where('status').equals('active').toArray(), []);
+  const todayLogs = useLiveQuery(() => db.habitLogs.where('date').equals(todayStr).toArray(), [todayStr]);
+  const allCompletedLogs = useLiveQuery(
+    () => db.habitLogs.filter((l) => l.status === 'completed').toArray(),
+    []
+  );
+
+  // Check-in modal state
+  const [checkInHabit, setCheckInHabit] = useState<Habit | null>(null);
+  const [isCheckInOpen, setIsCheckInOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  // Build lookups
+  const todayLogMap = new Map<string, HabitLog>(todayLogs?.map((l) => [l.habitId, l]) || []);
+
+  const totalSuccessCountByHabit = new Map<string, number>();
+  if (allCompletedLogs) {
+    for (const log of allCompletedLogs) {
+      totalSuccessCountByHabit.set(log.habitId, (totalSuccessCountByHabit.get(log.habitId) || 0) + 1);
+    }
+  }
+
+  // Derive metrics purely from actual database data
+  const totalActiveCount = habits?.length || 0;
+
+  const scheduledTodayHabits = (habits || []).filter((h) =>
+    isScheduledDay(h.schedule, todayStr, h.startDate, h.endDate)
+  );
+
+  const completedTodayCount = scheduledTodayHabits.filter((h) => {
+    const log = todayLogMap.get(h.id);
+    return log?.status === 'completed';
+  }).length;
+
+  const pendingTodayCount = scheduledTodayHabits.filter((h) => {
+    const log = todayLogMap.get(h.id);
+    return !log;
+  }).length;
+
+  const failedTodayCount = scheduledTodayHabits.filter((h) => {
+    const log = todayLogMap.get(h.id);
+    return log?.status === 'failed' || log?.status === 'missed';
+  }).length;
+
+  const completionPercentage =
+    scheduledTodayHabits.length > 0
+      ? Math.round((completedTodayCount / scheduledTodayHabits.length) * 100)
+      : 0;
+
+  const totalAllTimeCleanDays = allCompletedLogs?.length || 0;
+
+  const handleOpenCheckIn = (habit: Habit) => {
+    setCheckInHabit(habit);
+    setIsCheckInOpen(true);
   };
 
-  const completedCount = habits.filter((h) => h.completedToday).length;
-  const completionPercentage = Math.round((completedCount / habits.length) * 100);
-  const activeStreakCount = habits.length;
+  const handleQuickToggle = async (habit: Habit) => {
+    const existingLog = todayLogMap.get(habit.id);
+    if (existingLog) {
+      // Open modal to view/correct
+      handleOpenCheckIn(habit);
+    } else {
+      // One-click default completion for binary or abstinence
+      if (habit.type === 'quantitative') {
+        handleOpenCheckIn(habit);
+      } else {
+        await HabitLogService.recordCheckIn(habit, todayStr, { status: 'completed' });
+      }
+    }
+  };
 
   return (
     <div className="space-y-8">
-      {/* Top Banner / Hero */}
+      {/* Hero Motto Banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-obsidian-900 via-obsidian-850 to-obsidian-900 border border-gold-600/30 p-6 sm:p-8 shadow-obsidian-elevated">
         <div className="absolute top-0 right-0 w-80 h-80 bg-gold-500/5 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge variant="gold" size="sm" className="font-mono">
-                COMMAND CENTER &bull; M1
+                COMMAND CENTER &bull; M2
               </Badge>
               <span className="text-xs text-slate-400 font-mono">
                 {formatFriendlyDate(new Date())}
@@ -128,183 +132,243 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onNavigate('journal')}
+              onClick={onOpenQuickAction}
               className="gap-2"
             >
               <BookOpen className="w-4 h-4 text-gold-400" />
-              <span>Evening Journal</span>
+              <span>Quick Action</span>
             </Button>
             <Button
               variant="gold-glow"
               size="sm"
-              onClick={onOpenQuickAction}
-              className="gap-2"
+              onClick={() => setIsCreateModalOpen(true)}
+              className="gap-2 font-semibold text-obsidian-950"
             >
-              <Zap className="w-4 h-4 text-obsidian-950 fill-obsidian-950" />
-              <span>Log Commitment</span>
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Architect Habit</span>
             </Button>
           </div>
         </div>
 
-        {/* Preview Badge Notice */}
+        {/* Database Real-Time Status */}
         <div className="mt-4 pt-4 border-t border-obsidian-750/70 flex items-center justify-between text-xs text-slate-400">
           <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-gold-400/80 animate-pulse" />
-            <span>Interactive Foundation Preview — Ready for M2 Habit Engine persistence</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-slate-300">
+              Reactive IndexedDB: <strong>{totalActiveCount} Active Habits</strong>
+            </span>
           </span>
-          <span className="text-[11px] font-mono text-gold-400/80">Dexie IndexedDB Engine Initialized</span>
+          <span className="text-[11px] font-mono text-gold-400">
+            {completedTodayCount} of {scheduledTodayHabits.length} Today Fulfillments
+          </span>
         </div>
       </div>
 
-      {/* 4-Column High-Level Discipline Metrics */}
+      {/* 4-Column Real Metrics Cards (Zero Mock Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          label="Active Streaks"
-          value={activeStreakCount}
-          unit="commitments"
-          subtext="100% independent tracking"
+          label="Active Commitments"
+          value={totalActiveCount}
+          unit="habits"
+          subtext={`${scheduledTodayHabits.length} scheduled for today`}
           icon={<Flame className="w-5 h-5 text-gold-400" />}
           highlight={true}
         />
         <MetricCard
           label="Today's Fulfillment"
-          value={`${completedCount}/${habits.length}`}
+          value={`${completedTodayCount}/${scheduledTodayHabits.length}`}
           unit={`(${completionPercentage}%)`}
-          subtext={`${habits.length - completedCount} actions remaining today`}
+          subtext={`${pendingTodayCount} pending check-in`}
           icon={<CheckCircle2 className="w-5 h-5 text-emerald-400" />}
           trend={{ value: `${completionPercentage}%`, isPositive: completionPercentage >= 50 }}
         />
         <MetricCard
-          label="Discipline Score"
-          value="94"
-          unit="/ 100"
-          subtext="Rolling 30-day scheduled consistency"
-          icon={<Activity className="w-5 h-5 text-gold-300" />}
-          trend={{ value: '+2.4 pts', isPositive: true }}
+          label="Total Clean Days"
+          value={totalAllTimeCleanDays}
+          unit="completed days"
+          subtext="Persisted in local IndexedDB"
+          icon={<Shield className="w-5 h-5 text-gold-300" />}
         />
         <MetricCard
-          label="Longest Record"
-          value="45"
-          unit="days"
-          subtext="Preserved permanently across resets"
-          icon={<Trophy className="w-5 h-5 text-amber-400" />}
+          label="Pending Today"
+          value={pendingTodayCount}
+          unit="commitments"
+          subtext={failedTodayCount > 0 ? `${failedTodayCount} setbacks logged` : 'Zero setbacks logged today'}
+          icon={<Clock className="w-5 h-5 text-amber-400" />}
         />
       </div>
 
-      {/* Main Grid: Today's Commitments & Active Streaks Summary */}
+      {/* Main Grid: Today's Protocol Checklist & Side Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column (7 cols): Today's Commitments Check-in */}
+        {/* Left Column (7 cols): Today's Active Habits Protocol */}
         <div className="lg:col-span-7 space-y-6">
-          <Card className="border-obsidian-700/80 bg-obsidian-850">
+          <Card className="border-obsidian-750 bg-obsidian-850">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <span>Today's Discipline Protocol</span>
-                  <Badge variant="gold-subtle" size="sm">
-                    {completedCount} / {habits.length} Complete
-                  </Badge>
+                  {scheduledTodayHabits.length > 0 && (
+                    <Badge variant="gold-subtle" size="sm">
+                      {completedTodayCount} / {scheduledTodayHabits.length} Complete
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription>
-                  Uncompromising check-in. Tap any habit to fulfill today's commitment.
+                  Uncompromising check-in for commitments scheduled for {formatFriendlyDate(todayStr)}.
                 </CardDescription>
               </div>
+
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => onNavigate('streaks')}
                 className="text-xs text-gold-400 hover:text-gold-300"
               >
-                <span>View All</span>
+                <span>Manage All</span>
                 <ArrowRight className="w-3.5 h-3.5 ml-1" />
               </Button>
             </CardHeader>
 
             <CardContent className="space-y-3 pt-2">
-              <Progress value={completionPercentage} showLabel={false} size="sm" className="mb-4" />
+              {scheduledTodayHabits.length > 0 && (
+                <Progress value={completionPercentage} showLabel={false} size="sm" className="mb-4" />
+              )}
 
-              {habits.map((habit) => {
-                const isAbstinence = habit.type === 'abstinence';
-                return (
-                  <div
-                    key={habit.id}
-                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
-                      habit.completedToday
-                        ? 'bg-obsidian-900/60 border-emerald-900/40 text-slate-300'
-                        : 'bg-obsidian-800/80 border-obsidian-700/80 hover:border-gold-500/40'
-                    }`}
+              {/* Empty state when no habits exist */}
+              {totalActiveCount === 0 ? (
+                <div className="p-8 text-center rounded-xl border border-dashed border-obsidian-700 bg-obsidian-900/40 space-y-3">
+                  <Shield className="w-8 h-8 text-gold-400 mx-auto" />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-slate-200">
+                      No Active Commitments Found
+                    </h4>
+                    <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                      Begin by architecting your first abstinence, completion, or quantitative habit.
+                    </p>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="gap-1.5"
                   >
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <button
-                        onClick={() => toggleHabit(habit.id)}
-                        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                          habit.completedToday
-                            ? 'bg-emerald-500 text-obsidian-950 font-bold shadow-[0_0_10px_rgba(46,125,78,0.4)]'
-                            : 'border border-obsidian-600 hover:border-gold-400 bg-obsidian-850'
-                        }`}
-                        title={habit.completedToday ? 'Mark as incomplete' : 'Mark as complete'}
-                        aria-label={`Toggle completion for ${habit.title}`}
-                      >
-                        {habit.completedToday && <Check className="w-4 h-4 stroke-[3]" />}
-                      </button>
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>Architect First Habit</span>
+                  </Button>
+                </div>
+              ) : scheduledTodayHabits.length === 0 ? (
+                <div className="p-6 text-center rounded-xl bg-obsidian-900/40 border border-obsidian-750 text-slate-400 text-xs">
+                  All active habits are excused on this weekday according to your custom schedules.
+                </div>
+              ) : (
+                scheduledTodayHabits.map((habit) => {
+                  const log = todayLogMap.get(habit.id);
+                  const isCompleted = log?.status === 'completed';
+                  const isFailed = log?.status === 'failed' || log?.status === 'missed';
+                  const isAbstinence = habit.type === 'abstinence';
+                  const totalSuccess = totalSuccessCountByHabit.get(habit.id) || 0;
 
-                      <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2">
+                  return (
+                    <div
+                      key={habit.id}
+                      className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${
+                        isCompleted
+                          ? 'bg-obsidian-900/60 border-emerald-900/40 text-slate-300'
+                          : isFailed
+                          ? 'bg-red-950/20 border-red-900/40 text-red-200'
+                          : 'bg-obsidian-800/80 border-obsidian-700/80 hover:border-gold-500/40'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0">
+                        <button
+                          onClick={() => handleQuickToggle(habit)}
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                            isCompleted
+                              ? 'bg-emerald-500 text-obsidian-950 font-bold shadow-[0_0_10px_rgba(46,125,78,0.4)]'
+                              : isFailed
+                              ? 'bg-red-500 text-obsidian-950 font-bold'
+                              : 'border border-obsidian-600 hover:border-gold-400 bg-obsidian-850'
+                          }`}
+                          title={isCompleted ? 'Completed (Click to view log)' : 'Check In'}
+                          aria-label={`Toggle check-in for ${habit.title}`}
+                        >
+                          {isCompleted && <Check className="w-4 h-4 stroke-[3]" />}
+                          {isFailed && <span className="font-bold text-xs">✕</span>}
+                        </button>
+
+                        <div className="flex flex-col min-w-0">
                           <span
                             className={`font-medium text-sm truncate ${
-                              habit.completedToday ? 'line-through text-slate-400' : 'text-slate-100'
+                              isCompleted ? 'line-through text-slate-400' : 'text-slate-100'
                             }`}
                           >
                             {habit.title}
                           </span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
-                          <span className="capitalize">{habit.category}</span>
-                          <span>&bull;</span>
-                          <span className="font-mono text-gold-400">
-                            {habit.currentStreak} day streak
-                          </span>
-                          {habit.target && (
-                            <>
-                              <span>&bull;</span>
-                              <span className="font-mono text-slate-400">{habit.target}</span>
-                            </>
-                          )}
+
+                          <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                            <span className="capitalize">{habit.category}</span>
+                            <span>&bull;</span>
+                            <span className="font-mono text-gold-400">
+                              {totalSuccess} total clean days
+                            </span>
+                            {habit.targetValue && (
+                              <>
+                                <span>&bull;</span>
+                                <span className="font-mono text-slate-400">
+                                  {habit.targetConstraint === 'at_most' ? '≤' : '≥'} {habit.targetValue} {habit.unit}
+                                </span>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          isAbstinence
-                            ? 'gold-subtle'
-                            : habit.type === 'quantitative'
-                            ? 'warning'
-                            : 'neutral'
-                        }
-                        size="sm"
-                        className="capitalize hidden sm:inline-flex"
-                      >
-                        {habit.type}
-                      </Badge>
-                      {habit.completedToday ? (
-                        <span className="text-xs text-emerald-400 font-mono font-medium px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40">
-                          Secured
-                        </span>
-                      ) : (
-                        <Button
-                          variant="secondary"
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={
+                            isAbstinence
+                              ? 'gold-subtle'
+                              : habit.type === 'quantitative'
+                              ? 'warning'
+                              : 'neutral'
+                          }
                           size="sm"
-                          onClick={() => toggleHabit(habit.id)}
-                          className="text-xs h-7 px-2.5"
+                          className="capitalize hidden sm:inline-flex"
                         >
-                          Check In
-                        </Button>
-                      )}
+                          {habit.type}
+                        </Badge>
+
+                        {isCompleted ? (
+                          <button
+                            onClick={() => handleOpenCheckIn(habit)}
+                            className="text-xs text-emerald-400 font-mono font-medium px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/40 hover:brightness-110"
+                            title="Click to view or edit log"
+                          >
+                            {isAbstinence ? 'Maintained ✓' : 'Completed ✓'}
+                          </button>
+                        ) : isFailed ? (
+                          <button
+                            onClick={() => handleOpenCheckIn(habit)}
+                            className="text-xs text-red-400 font-mono font-medium px-2 py-0.5 rounded bg-red-950/60 border border-red-800/40 hover:brightness-110"
+                            title="Click to view or edit log"
+                          >
+                            {isAbstinence ? 'Setback ✕' : 'Missed ✕'}
+                          </button>
+                        ) : (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenCheckIn(habit)}
+                            className="text-xs h-7 px-2.5"
+                          >
+                            Check In
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </CardContent>
           </Card>
 
@@ -334,70 +398,58 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           </div>
         </div>
 
-        {/* Right Column (5 cols): Milestones, Streaks Summary & Reflection Prompt */}
+        {/* Right Column (5 cols): Milestones Info & Evening Reflection */}
         <div className="lg:col-span-5 space-y-6">
-          {/* Upcoming Milestone Preview */}
-          <Card className="border-obsidian-700/80 bg-obsidian-850">
+          {/* Active Commitments Summary */}
+          <Card className="border-obsidian-750 bg-obsidian-850">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Trophy className="w-4 h-4 text-gold-400" />
-                  <span>Upcoming Milestones</span>
+                  <Shield className="w-4 h-4 text-gold-400" />
+                  <span>Sovereign Commitments</span>
                 </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onNavigate('milestones')}
+                  onClick={() => onNavigate('streaks')}
                   className="text-xs text-gold-400 hover:text-gold-300"
                 >
-                  Rewards
+                  View All
                 </Button>
               </div>
               <CardDescription>
-                Independently configured per streak with custom rewards.
+                Independently managed habits operating in complete isolation.
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-4 pt-1">
-              {/* Milestone 1 */}
-              <div className="p-3 rounded-xl bg-obsidian-800/80 border border-obsidian-700/70 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200">
-                    Digital Purity — 30 Days Sovereign
-                  </span>
-                  <Badge variant="gold" size="sm" className="font-mono">
-                    6 Days Left
-                  </Badge>
-                </div>
-                <p className="text-xs text-gold-300/90 font-medium">
-                  Reward: High-end Leather Bound Journal
-                </p>
-                <Progress value={80} size="sm" variant="gold" />
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                  <span>Day 24 of 30</span>
-                  <span>80% complete</span>
-                </div>
-              </div>
+            <CardContent className="space-y-3 pt-1">
+              {(habits || []).slice(0, 3).map((h) => {
+                const totalSuccess = totalSuccessCountByHabit.get(h.id) || 0;
+                return (
+                  <div
+                    key={h.id}
+                    onClick={() => onNavigate('streaks')}
+                    className="p-3 rounded-xl bg-obsidian-800/80 border border-obsidian-750 hover:border-gold-500/40 cursor-pointer transition-all space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-200 truncate">{h.title}</span>
+                      <Badge variant="gold-subtle" size="sm" className="capitalize">
+                        {h.type}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                      <span>Category: {h.category}</span>
+                      <span className="text-gold-300 font-bold">{totalSuccess} days clean</span>
+                    </div>
+                  </div>
+                );
+              })}
 
-              {/* Milestone 2 */}
-              <div className="p-3 rounded-xl bg-obsidian-800/80 border border-obsidian-700/70 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-200">
-                    DSA Practice — 14 Days Consistency
-                  </span>
-                  <Badge variant="gold-subtle" size="sm" className="font-mono">
-                    2 Days Left
-                  </Badge>
-                </div>
-                <p className="text-xs text-gold-300/90 font-medium">
-                  Reward: Weekend Specialty Coffee & Book
+              {totalActiveCount > 3 && (
+                <p className="text-[11px] text-slate-500 text-center pt-1 font-mono">
+                  + {totalActiveCount - 3} more habits active
                 </p>
-                <Progress value={85} size="sm" variant="gold" />
-                <div className="flex justify-between text-[11px] text-slate-400 font-mono">
-                  <span>Day 12 of 14</span>
-                  <span>85% complete</span>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -433,6 +485,21 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           </Card>
         </div>
       </div>
+
+      {/* Modals */}
+      <CheckInModal
+        isOpen={isCheckInOpen}
+        onClose={() => setIsCheckInOpen(false)}
+        habit={checkInHabit}
+        existingLog={checkInHabit ? todayLogMap.get(checkInHabit.id) || null : null}
+        onSuccess={() => {}}
+      />
+
+      <HabitFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => {}}
+      />
     </div>
   );
 }

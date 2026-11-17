@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation) Complete
+**Status:** M1 (Foundation) & M2 (Habit Management Engine) Complete
 
 ---
 
@@ -14,62 +14,66 @@ SEMNÓTĒS is architected with strict separation of concerns across four key lay
 ┌────────────────────────────────────────────────────────┐
 │                   Presentation Layer                   │
 │   (React 19, Tailwind CSS, Lucide, AppShell, Views)    │
+│   - CommandCenter (Reactive live dashboard)            │
+│   - StreaksView (Habits management & filtering)        │
+│   - HabitDetailView (Historical logs & stats)          │
+│   - HabitFormModal & CheckInModal                      │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                    Application Layer                   │
-│    (Use Cases, ViewModels, Hooks, Orchestrators)       │
+│    (HabitService, HabitLogService, ScheduleService,    │
+│     HabitDashboardService, Dexie Live Queries)         │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                   Domain Engine Layer                  │
-│  (Streak Engine, Discipline Score Math, Zod Entities)  │
+│  (Streak Engine [M3], Zod Entities, Validation Rules)  │
 │             * Zero React / UI Dependencies *           │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                  Persistence Layer                     │
-│  (Dexie.js IndexedDB, Local-First Repositories, JSON)  │
+│  (Dexie.js IndexedDB: semnotes_db v2, Audit Trails)    │
 └────────────────────────────────────────────────────────┘
 ```
 
 ### Key Decisions:
-1. **Decoupled Business Logic:** The Streak Engine, Milestone detector, and Discipline Score algorithms are pure TypeScript functions located under `src/core/`. They have **no** React or DOM dependencies and are tested via pure Vitest suites.
-2. **Local-First Sovereign Storage:** Browser IndexedDB (via Dexie.js) is the primary source of truth. The application operates 100% offline without external network requirements.
-3. **Auditability:** Accidental check-ins or schedule corrections record historical audit entries (`correctedAt`, `notes`) rather than mutating past logs destructively.
+1. **Decoupled Business Logic:** All operations (`createHabit`, `updateHabit`, `recordCheckIn`, `correctCheckIn`, `isScheduledDay`, `getDashboardMetrics`) are standalone services in `src/core/services/` with strict Zod runtime verification and zero React dependencies.
+2. **Local-First Sovereign Storage:** Browser IndexedDB (via Dexie.js v4) is the canonical source of truth. The application operates 100% offline.
+3. **Auditability & Safe Corrections:** Accidental check-ins or schedule modifications create immutable historical audit entries in `db.auditRecords` (`action`, `previousStatus`, `newStatus`, `previousValue`, `newValue`, `reason`, `timestamp`).
+4. **Duplicate Prevention:** Daily logs use atomic Dexie transactions on compound index `[habitId+date]`, guaranteeing exactly one canonical log per habit per local date while permitting auditable in-place modifications.
 
 ---
 
-## 2. Strict Streak Engine (Formal Specification)
+## 2. Habit Management Domain Specifications
 
-### Mathematical Invariants
-Let $H$ be a habit with schedule frequency $S \in \{\text{daily}, \text{selected\_days}\}$ and start date $D_0$.
+### A. Tracking Types
+1. **Abstinence Tracking:**
+   - Daily outcomes: *Maintained Standard* (`status: 'completed'`) vs *Setback / Relapse* (`status: 'failed'`).
+   - Purpose: Breaking negative loops (pornography, smoking, dopamine binging) where success is defined by avoiding the trigger.
+2. **Binary Completion Tracking:**
+   - Daily outcomes: *Completed* (`status: 'completed'`) vs *Missed* (`status: 'failed'`).
+   - Purpose: Daily habits requiring positive action (DSA problem solving, deep reading, calisthenics).
+3. **Quantitative Tracking:**
+   - Target configuration: `targetValue: number`, `unit: string`, `targetConstraint: 'at_least' | 'at_most'`.
+   - Determination: Evaluated on log entry. If `at_least`, `numericValue >= targetValue ? 'completed' : 'failed'`. If `at_most`, `numericValue <= targetValue ? 'completed' : 'failed'`.
 
-For any calendar date $d \ge D_0$:
-- If $d$ is a scheduled day:
-  - Fulfill condition met $\implies \text{status}(d) = \text{completed}$
-  - Target missed / Relapse $\implies \text{status}(d) = \text{failed}$
-  - Day passed with no record $\implies \text{status}(d) = \text{missed}$
-- If $d$ is not a scheduled day $\implies \text{status}(d) = \text{skipped}$ (Streak is preserved, counter does not increment or decrement).
-
-### Calculation Rules
-1. **Current Streak ($C$):**
-   $$C = \text{consecutive completed scheduled days up to today without interruption}$$
-   If any scheduled day has status $\in \{\text{failed}, \text{missed}\}$, $C$ immediately resets to $0$.
-2. **Longest Streak ($L$):**
-   $$L = \max_{t \le \text{today}} \{ C(t) \}$$
-   $L$ is monotonic non-decreasing ($L_{t+1} \ge L_t$) and is never reset by a relapse.
-3. **Independent Isolation:**
-   $$\forall H_i, H_j \quad (i \ne j) \implies \text{Streak}(H_i) \perp \text{Streak}(H_j)$$
+### B. Scheduling Engine
+- `frequency: 'daily' | 'selected_days'`.
+- Selected days use `selectedDays: number[]` (0=Sun, 1=Mon, ..., 6=Sat).
+- Unscheduled days are strictly categorized as `rest_day` or `skipped`; **unscheduled days are never marked as missed**.
+- Bound check against `startDate` and optional `endDate`.
 
 ---
 
-## 3. Data Schema & Persistence (IndexedDB)
+## 3. Data Schema & Persistence (IndexedDB v2)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 
 - `habits`: `id, category, type, status, startDate, createdAt`
 - `habitLogs`: `id, habitId, date, status, [habitId+date]`
+- `auditRecords`: `id, habitId, habitLogId, date, action, timestamp`
 - `milestones`: `id, habitId, thresholdDays, isUnlocked, isClaimed`
 - `journalEntries`: `id, date, mood, createdAt`
 - `urgeLogs`: `id, habitId, timestamp, intensity, response`

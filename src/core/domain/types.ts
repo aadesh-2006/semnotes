@@ -23,6 +23,9 @@ export type HabitType = z.infer<typeof HabitTypeSchema>;
 export const HabitStatusSchema = z.enum(['active', 'paused', 'archived']);
 export type HabitStatus = z.infer<typeof HabitStatusSchema>;
 
+export const TargetConstraintSchema = z.enum(['at_least', 'at_most']).default('at_least');
+export type TargetConstraint = z.infer<typeof TargetConstraintSchema>;
+
 // ==========================================
 // Habit Schedule
 // ==========================================
@@ -44,8 +47,12 @@ export const HabitSchema = z.object({
   type: HabitTypeSchema,
   schedule: HabitScheduleSchema,
   targetValue: z.number().positive().optional(),
+  targetConstraint: TargetConstraintSchema.optional(),
   unit: z.string().optional(),
+  icon: z.string().optional(),
+  notes: z.string().optional(),
   startDate: z.string(), // YYYY-MM-DD
+  endDate: z.string().optional(), // Optional YYYY-MM-DD
   status: HabitStatusSchema.default('active'),
   createdAt: z.string(), // ISO8601
   updatedAt: z.string(), // ISO8601
@@ -53,12 +60,28 @@ export const HabitSchema = z.object({
 });
 export type Habit = z.infer<typeof HabitSchema>;
 
+// Input schema for creation (omitting system-generated fields)
+export const CreateHabitInputSchema = HabitSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sortOrder: true,
+}).extend({
+  description: z.string().default('').optional(),
+  status: HabitStatusSchema.default('active').optional(),
+});
+export type CreateHabitInput = z.infer<typeof CreateHabitInputSchema>;
+
+// Input schema for updates
+export const UpdateHabitInputSchema = CreateHabitInputSchema.partial();
+export type UpdateHabitInput = z.infer<typeof UpdateHabitInputSchema>;
+
 // ==========================================
 // Habit Daily Log & Audit
 // ==========================================
 export const HabitLogStatusSchema = z.enum([
-  'completed',   // Successfully fulfilled habit
-  'failed',      // Explicitly failed / relapsed / did not reach target
+  'completed',   // Successfully fulfilled habit (or Abstinence: Maintained)
+  'failed',      // Explicitly failed / Setback / did not reach target / Missed
   'missed',      // Day passed without check-in under strict policy
   'skipped'      // Scheduled rest day or excused
 ]);
@@ -72,13 +95,30 @@ export const HabitLogSchema = z.object({
   numericValue: z.number().optional(),
   notes: z.string().optional(),
   correctedAt: z.string().optional(),
+  correctionReason: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type HabitLog = z.infer<typeof HabitLogSchema>;
 
+// Audit Record Schema
+export const AuditRecordSchema = z.object({
+  id: z.string().uuid(),
+  habitId: z.string().uuid(),
+  habitLogId: z.string().uuid().optional(),
+  date: z.string(), // YYYY-MM-DD
+  action: z.enum(['create', 'check_in', 'correction', 'status_change', 'archive', 'pause', 'resume']),
+  previousStatus: z.string().optional(),
+  newStatus: z.string().optional(),
+  previousValue: z.number().optional(),
+  newValue: z.number().optional(),
+  reason: z.string().optional(),
+  timestamp: z.string(), // ISO8601
+});
+export type AuditRecord = z.infer<typeof AuditRecordSchema>;
+
 // ==========================================
-// Streak Record (Computed & Cached)
+// Streak Record (Computed & Cached for M3)
 // ==========================================
 export const StreakRecordSchema = z.object({
   habitId: z.string().uuid(),
@@ -91,7 +131,7 @@ export const StreakRecordSchema = z.object({
 export type StreakRecord = z.infer<typeof StreakRecordSchema>;
 
 // ==========================================
-// Milestones & Rewards
+// Milestones & Rewards (M4)
 // ==========================================
 export const MilestoneSchema = z.object({
   id: z.string().uuid(),
@@ -108,7 +148,7 @@ export const MilestoneSchema = z.object({
 export type Milestone = z.infer<typeof MilestoneSchema>;
 
 // ==========================================
-// Journal & Urge Log
+// Journal & Urge Log (M5)
 // ==========================================
 export const UrgeLogSchema = z.object({
   id: z.string().uuid(),
@@ -152,7 +192,7 @@ export const FocusSessionSchema = z.object({
 export type FocusSession = z.infer<typeof FocusSessionSchema>;
 
 // ==========================================
-// User Settings & Privacy
+// User Settings & Privacy (Module 10)
 // ==========================================
 export const UserSettingsSchema = z.object({
   userName: z.string().default('Commander'),

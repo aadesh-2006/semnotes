@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.2] — 2026-11-17 (Milestone 2: Habit Management Engine)
+
+### Added
+- **Habit Management System (CRUD):**
+  - Unlimited habit architecture for three tracking modalities:
+    - *Abstinence*: Maintained Standard vs Setback/Relapse (e.g., Digital Purity, Sobriety).
+    - *Completion*: Binary Completed vs Missed (e.g., DSA Practice, Reading).
+    - *Quantitative*: Configurable targets, measured units, and constraints (`at_least` vs `at_most`).
+  - Creation and editing modal (`HabitFormModal`) with real-time Zod schema validation.
+  - Habit lifecycle management: Active, Paused, and Archived states with confirmation dialogs.
+  - Hard deletion safeguards ensuring historical records are never silently erased.
+- **Flexible Scheduling Engine:**
+  - Support for "Every Day" and "Selected Days" (Sunday–Saturday weekday toggles).
+  - Unscheduled day handling: Non-scheduled days are never marked as missed.
+  - Strict calendar date boundaries (`startDate` and optional `endDate`).
+- **Habit Detail View (`HabitDetailView`):**
+  - Dedicated full-page view for every individual habit.
+  - Standard of excellence display, real database statistics cards (Total recorded days, Clean days, Setbacks, Adherence rate).
+  - Comprehensive historical daily records table with status pills, measured values, and reflection notes.
+- **Contextual Daily Check-In (`CheckInModal`):**
+  - Intuitive dialog for Abstinence, Completion, and Quantitative check-ins.
+  - Live target evaluation for quantitative inputs.
+  - Transaction-safe duplicate check-in prevention (`[habitId+date]`).
+  - Auditable correction workflow requiring an audit reason when updating previous check-ins.
+- **Reactive Command Center Dashboard:**
+  - Replaced all M1 demonstration metrics with live Dexie queries via `useLiveQuery`.
+  - Real active habits count, today scheduled count, completed today, pending today, and adherence %.
+  - One-click daily protocol check-in checklist.
+  - Clean empty state with direct action when zero habits are created.
+- **Database Schema Upgrades:**
+  - Bumped Dexie database to version 2, introducing the `auditRecords` table.
+- **Automated Test Suite:**
+  - Added 14 comprehensive test cases covering all 15 prompt requirements (`src/test/habitManagement.test.ts`), bringing total passing tests to 20/20.
+
+---
+
 ## [1.0.0-alpha.1] — 2026-11-17 (Milestone 1: Project Foundation)
 
 ### Added
