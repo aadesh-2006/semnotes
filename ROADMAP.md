@@ -63,29 +63,42 @@
 - [x] Command Center integration with alert banner for unclaimed rewards and *Upcoming Milestones* quick preview.
 - [x] Automated test suite covering 32 milestone, achievement, claim, and immutability scenarios (70/70 passing Vitest tests).
 
-### M5 — Journal & Reflection
+### M5 — Consistency Calendar & Discipline Heatmap (Completed)
+- [x] Pure calendar aggregation engine (`CalendarAggregationService`) calculating daily adherence percentage.
+- [x] Strict semantic day states (`complete`, `partial`, `failed`, `pending`, `rest`, `paused`, `future`).
+- [x] Pending commitment isolation (pending check-ins on evaluation date never counted as failures).
+- [x] Paused and unscheduled day exclusion from evaluated denominator.
+- [x] Monthly calendar matrix with previous/next month navigation, jump to today, and micro-metrics.
+- [x] 52-week contribution-style discipline heatmap in Obsidian & Gold palette with clear intensity legend.
+- [x] Interactive day detail slide-over panel with adherence meter and habit-by-habit breakdown cards.
+- [x] In-place check-in and audit correction modal triggers directly from calendar day details.
+- [x] Multi-dimensional filters (Specific habits, Category dropdown, Tracking type, Lifecycle status pills: Active, Paused, Archived).
+- [x] Monthly summary analytics cards (Total Scheduled, Completed, Missed/Failed, Average Consistency %, Best Consistency Day/Week).
+- [x] Batched, indexed queries avoiding repeated cell-by-cell database access.
+- [x] Automated test suite covering 26 aggregation, leap-year, filter, boundary, and audit correction scenarios (96/96 Vitest tests passing).
+
+### M6 — Journal & Daily Reflection
 - [ ] Daily sovereign reflection editor.
 - [ ] 1-10 Urge Diagnostic slider with trigger tagging.
 - [ ] Morning and evening reflective prompts.
 - [ ] Searchable private history.
 
-### M6 — Discipline Analytics
+### M7 — Discipline Analytics
 - [ ] Algorithmic Rolling 30-day Discipline Score calculation.
-- [ ] Multi-series Recharts consistency graphs.
+- [ ] Multi-series consistency graphs.
 - [ ] Habit comparison matrix and drop-off analysis.
 
-### M7 — Focus & Recovery
+### M8 — Focus & Recovery Protocol
 - [ ] Audited focus timer with Pomodoro and custom durations.
 - [ ] Session tagging linked to habits.
 - [ ] Constructive Setback Forensic workflow.
 - [ ] Return-to-routine somatic checklist.
 
-### M8 — Storage & Synchronisation
-- [ ] Reactive Dexie IndexedDB live queries.
+### M9 — Storage & Synchronisation
 - [ ] Complete database backup export (JSON) and restore (import).
-- [ ] Optional client-side encrypted Supabase synchronization.
+- [ ] Optional client-side encrypted synchronization.
 
-### M9 — Quality Assurance & Release Polish
+### M10 — Quality Assurance & Release Polish
 - [ ] Playwright E2E verification of critical check-in and recovery flows.
 - [ ] WCAG AA accessibility compliance.
 - [ ] Lighthouse 95+ performance optimization.

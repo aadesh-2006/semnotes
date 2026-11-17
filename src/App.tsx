@@ -34,7 +34,7 @@ export function App() {
           />
         );
       case 'calendar':
-        return <CalendarView />;
+        return <CalendarView onNavigate={(route) => setCurrentRoute(route)} />;
       case 'journal':
         return <JournalView />;
       case 'analytics':

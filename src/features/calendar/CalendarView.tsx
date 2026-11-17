@@ -1,85 +1,240 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Badge } from '../../components/ui/badge';
-import { CalendarDays } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { CalendarSummary } from './CalendarSummary';
+import { CalendarFilters } from './CalendarFilters';
+import { MonthlyCalendar } from './MonthlyCalendar';
+import { YearlyHeatmap } from './YearlyHeatmap';
+import { DayDetailPanel } from './DayDetailPanel';
+import { CheckInModal } from '../../components/modals/CheckInModal';
+import { CalendarAggregationService } from '../../core/calendar/calendarAggregationService';
+import { getMonthDateRange, getYearDateRange } from '../../core/calendar/calendarUtils';
+import { formatCalendarDate } from '../../core/utils';
+import type { Habit } from '../../core/domain/types';
+import type {
+  DailyDisciplineSummary,
+  CalendarFilters as FilterOptions,
+  CalendarViewMode,
+  MonthlySummaryMetrics
+} from '../../core/calendar/calendarTypes';
+import type { RouteId } from '../../app/routes';
 
-export function CalendarView() {
-  // Generate sample 28-day grid for current month visual layout
-  const days = Array.from({ length: 30 }, (_, i) => ({
-    day: i + 1,
-    status: i === 14 ? 'failed' : i > 24 ? 'upcoming' : 'success'
-  }));
+interface CalendarViewProps {
+  onNavigate?: (route: RouteId) => void;
+}
+
+export function CalendarView({ onNavigate }: CalendarViewProps) {
+  const todayStr = useMemo(() => formatCalendarDate(new Date()), []);
+  const todayDate = useMemo(() => new Date(), []);
+
+  const [currentYear, setCurrentYear] = useState(todayDate.getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(todayDate.getMonth() + 1); // 1-12
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [viewMode, setViewMode] = useState<CalendarViewMode>('monthly');
+
+  const [filters, setFilters] = useState<FilterOptions>({
+    lifecycleStatuses: ['active', 'paused']
+  });
+
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [summaries, setSummaries] = useState<Map<string, DailyDisciplineSummary>>(new Map());
+  const [metrics, setMetrics] = useState<MonthlySummaryMetrics>({
+    monthLabel: '',
+    year: currentYear,
+    month: currentMonth,
+    totalScheduledCommitments: 0,
+    totalCompletedCommitments: 0,
+    totalFailedCommitments: 0,
+    totalMissedCommitments: 0,
+    averageCompletionPercentage: 0,
+    totalSuccessfulDays: 0,
+    totalEvaluatedDays: 0
+  });
+
+  const [loading, setLoading] = useState(true);
+
+  // Check-in / Audit correction modal state
+  const [checkInTarget, setCheckInTarget] = useState<{ habit: Habit; date: string } | null>(null);
+
+  // Fast habit lookup map
+  const habitsMap = useMemo(() => {
+    const map = new Map<string, Habit>();
+    for (const h of habits) {
+      map.set(h.id, h);
+    }
+    return map;
+  }, [habits]);
+
+  // Load calendar aggregation data
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      let rangeStart: string;
+      let rangeEnd: string;
+
+      if (viewMode === 'heatmap') {
+        // Query full calendar year for heatmap
+        const yearRange = getYearDateRange(currentYear);
+        rangeStart = yearRange.startDate;
+        rangeEnd = yearRange.endDate;
+      } else {
+        // Monthly view: load month
+        const monthRange = getMonthDateRange(currentYear, currentMonth);
+        rangeStart = monthRange.startDate;
+        rangeEnd = monthRange.endDate;
+      }
+
+      const result = await CalendarAggregationService.fetchAndAggregateRange(
+        rangeStart,
+        rangeEnd,
+        filters,
+        todayStr
+      );
+
+      setHabits(result.allHabits);
+      setSummaries(result.summaries);
+      setMetrics(result.metrics);
+    } catch (err) {
+      console.error('Failed to load calendar adherence data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentYear, currentMonth, viewMode, filters, todayStr]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Month navigation handlers
+  const handleNavigatePrev = () => {
+    if (currentMonth === 1) {
+      setCurrentMonth(12);
+      setCurrentYear((prev) => prev - 1);
+    } else {
+      setCurrentMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNavigateNext = () => {
+    if (currentMonth === 12) {
+      setCurrentMonth(1);
+      setCurrentYear((prev) => prev + 1);
+    } else {
+      setCurrentMonth((prev) => prev + 1);
+    }
+  };
+
+  const handleJumpToday = () => {
+    setCurrentYear(todayDate.getFullYear());
+    setCurrentMonth(todayDate.getMonth() + 1);
+    setSelectedDate(todayStr);
+  };
+
+  const handleOpenCheckIn = (habit: Habit, date: string) => {
+    setCheckInTarget({ habit, date });
+  };
+
+  const handleCheckInSaved = async () => {
+    setCheckInTarget(null);
+    await loadData();
+  };
+
+  const selectedSummary = selectedDate ? summaries.get(selectedDate) : undefined;
 
   return (
     <div className="space-y-6">
+      {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold font-display text-slate-100">
-              Consistency Calendar
+              Consistency Calendar & Heatmap
             </h2>
-            <Badge variant="gold" size="sm">M5 Domain</Badge>
+            <Badge variant="gold" size="sm">
+              M5 Strict Engine
+            </Badge>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            GitHub-style contribution heatmaps, monthly tracking, and individual streak filters.
+            Visual proof of sovereignty and discipline. Real adherence records, zero decorative vanity metrics.
           </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={loadData}
+          disabled={loading}
+          className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-obsidian-750 bg-obsidian-850 hover:bg-obsidian-800 text-xs font-mono text-slate-300 transition-colors"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-gold-400' : ''}`} />
+          <span>Refresh Records</span>
+        </button>
+      </div>
+
+      {/* Analytics Summary */}
+      <CalendarSummary metrics={metrics} />
+
+      {/* Filters and View Switcher */}
+      <CalendarFilters
+        habits={habits}
+        filters={filters}
+        onFilterChange={setFilters}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+      />
+
+      {/* Main Calendar Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left Column: Calendar View (Monthly Grid or Yearly Heatmap) */}
+        <div className="lg:col-span-2 space-y-4">
+          {viewMode === 'monthly' ? (
+            <MonthlyCalendar
+              year={currentYear}
+              month={currentMonth}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+              onNavigatePrev={handleNavigatePrev}
+              onNavigateNext={handleNavigateNext}
+              onJumpToday={handleJumpToday}
+              summaries={summaries}
+            />
+          ) : (
+            <YearlyHeatmap
+              year={currentYear}
+              summaries={summaries}
+              selectedDate={selectedDate}
+              onSelectDate={setSelectedDate}
+            />
+          )}
+        </div>
+
+        {/* Right Column: Selected Day Details Panel */}
+        <div className="lg:col-span-1">
+          <DayDetailPanel
+            summary={selectedSummary}
+            date={selectedDate}
+            onClose={() => setSelectedDate('')}
+            onOpenCheckIn={handleOpenCheckIn}
+            onNavigateToHabit={(_habitId) => {
+              if (onNavigate) {
+                onNavigate('streaks');
+              }
+            }}
+            habitsMap={habitsMap}
+          />
         </div>
       </div>
 
-      <Card className="border-obsidian-700/80 bg-obsidian-850">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-gold-400" />
-              <span>Monthly Matrix Preview</span>
-            </CardTitle>
-            <CardDescription>
-              Visual overview of adherence. Green represents completed; amber indicates rest days; red denotes audited reset.
-            </CardDescription>
-          </div>
-        </CardHeader>
-
-        <CardContent>
-          <div className="grid grid-cols-7 gap-2 text-center text-xs">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
-              <span key={d} className="font-semibold text-slate-400 pb-2">
-                {d}
-              </span>
-            ))}
-            {days.map((item) => (
-              <div
-                key={item.day}
-                className={`p-3 rounded-lg border font-mono flex flex-col items-center justify-center gap-1 transition-all ${
-                  item.status === 'success'
-                    ? 'bg-emerald-950/40 border-emerald-800/40 text-emerald-300'
-                    : item.status === 'failed'
-                    ? 'bg-red-950/40 border-red-800/40 text-red-300'
-                    : 'bg-obsidian-800/50 border-obsidian-700/50 text-slate-400'
-                }`}
-              >
-                <span className="text-xs font-bold">{item.day}</span>
-                <span className="text-[10px] uppercase font-sans">
-                  {item.status === 'success' ? 'Clean' : item.status === 'failed' ? 'Reset' : '—'}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-obsidian-750 text-xs text-slate-400">
-            <div className="flex items-center gap-4">
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-emerald-500/80" /> Successful Day
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-red-500/80" /> Strict Reset Day
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="w-3 h-3 rounded bg-obsidian-700" /> Scheduled Rest
-              </span>
-            </div>
-            <span className="font-mono text-gold-400">Filtering: All Streaks Combined</span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* In-place Check-in / Correction Modal */}
+      {checkInTarget && (
+        <CheckInModal
+          isOpen={Boolean(checkInTarget)}
+          onClose={() => setCheckInTarget(null)}
+          habit={checkInTarget.habit}
+          targetDate={checkInTarget.date}
+          existingLog={selectedSummary?.habits.find((h) => h.habitId === checkInTarget.habit.id)?.log}
+          onSuccess={handleCheckInSaved}
+        />
+      )}
     </div>
   );
 }

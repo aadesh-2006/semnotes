@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.5] — 2026-11-17 (Milestone 5: Consistency Calendar & Discipline Heatmap)
+
+### Added
+- **Consistency Calendar Aggregation Engine:**
+  - Dedicated aggregation engine in `src/core/calendar/`:
+    - `CalendarAggregationService`: Pure deterministic daily and date-range adherence calculator evaluating actual historical `HabitLog` records against habit schedules and pause intervals.
+    - Daily completion percentage formula: $\text{Daily Completion \%} = \frac{\text{Completed Scheduled Habits}}{\text{Evaluated Scheduled Habits}} \times 100$.
+    - Evaluated scheduled denominator excludes pending check-ins, paused days, and unscheduled rest days.
+    - Semantic day states: `complete`, `partial`, `failed`, `pending`, `rest`, `paused`, `future`.
+    - Zero division-by-zero errors; days with zero scheduled commitments return `null` completion and are represented as `rest` or `paused`.
+- **Interactive Consistency Calendar UI (`src/features/calendar/`):**
+  - Upgraded `/calendar` route to a comprehensive personal discipline dashboard:
+    - *Monthly Calendar Grid*: 7-column monthly grid with previous/next month navigation, jump to today, day cells with status badges, and micro-adherence metrics.
+    - *Discipline Heatmap*: 52-week contribution-style annual matrix in Obsidian & Gold with 5-level intensity ramp, month/weekday labels, and interactive tooltips.
+    - *Day Detail Panel*: Slide-over inspection panel displaying formatted date, semantic status badge, daily adherence meter, and habit-by-habit breakdown cards with streak impact badges (`+1 Increment`, `Resets to 0`, `No Impact`).
+    - *Live In-place Check-in & Audit Correction*: Embedded modal launcher allowing immediate check-in or retroactive audit correction directly from any calendar day cell.
+    - *Multi-dimensional Filters*: Filter by specific habit, category (`abstinence`, `craft`, `body`, `mind`, `discipline`, `custom`), tracking type, and lifecycle state (`active`, `paused`, `archived`).
+    - *Monthly Summary Analytics*: 5-card top bar calculating total scheduled commitments, completed count, missed/failed count, average adherence percentage, and best consistency day.
+- **Automated Test Suite:**
+  - Added 26 tests in `src/core/calendar/calendarAggregationService.test.ts` covering all aggregation semantics, leap years, pending isolation, paused exclusions, filters, and audit corrections. Total passing tests platform-wide: 96/96.
+
+---
+
 ## [1.0.0-alpha.4] — 2026-11-17 (Milestone 4: Custom Milestone & Reward Engine)
 
 ### Added

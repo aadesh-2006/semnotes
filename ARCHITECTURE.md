@@ -112,7 +112,43 @@ Resetting or failing $H_a$ has zero effect on the streak calculations of $H_b$.
 
 ---
 
-## 4. Data Schema & Persistence (IndexedDB v3)
+## 4. Consistency Calendar & Discipline Heatmap Engine (M5)
+
+The Consistency Calendar subsystem (`src/core/calendar/` and `src/features/calendar/`) transforms raw historical records into an interactive, forensic matrix of personal discipline.
+
+### Mathematical Adherence Semantics
+
+1. **Daily Evaluation Scope:**
+   For any calendar date $D$ and habit $H$:
+   - **Lifecycle Validity:** A habit is active on date $D$ if and only if:
+     $$D \ge H.\text{startDate} \quad \text{and} \quad (H.\text{endDate} = \varnothing \lor D \le H.\text{endDate})$$
+     Dates outside this boundary are marked `unscheduled` and excluded from all adherence calculations.
+   - **Pause Invariant:** If $D$ falls inside an audited pause interval ($[\text{pauseStart}, \text{pauseEnd}]$), the habit is evaluated as `paused` and excluded from the scheduled denominator.
+   - **Schedule Invariant:** If the habit is not scheduled for day of week $w(D)$ according to $H.\text{schedule}$, it is marked `unscheduled` (rest day).
+   - **Evaluated Commitments:** A habit is an *applicable scheduled commitment* on date $D$ if and only if it is active, not paused, and scheduled.
+
+2. **Daily Completion Percentage Formula:**
+   $$\text{Daily Completion Percentage} = \frac{\text{Completed Scheduled Habits}}{\text{Evaluated Scheduled Habits}} \times 100$$
+   where:
+   $$\text{Evaluated Scheduled Habits} = \text{CompletedCount} + \text{FailedCount} + \text{MissedCount}$$
+   - **Pending Invariant:** Pending commitments on the evaluation date (today) are strictly excluded from the failure count and the evaluated denominator.
+   - **Zero Scheduled Commitments:** If $\text{Evaluated Scheduled Habits} = 0$, the day completion percentage is `null` (never displayed as 0% failure).
+
+3. **Semantic Day States:**
+   - `complete`: $100\%$ adherence ($\text{CompletedCount} = \text{ScheduledCount}$ and $\text{PendingCount} = 0$).
+   - `partial`: Mixed adherence ($0\% < \% < 100\%$, or completed with pending commitments remaining).
+   - `failed`: $0\%$ adherence with scheduled commitments ($\text{CompletedCount} = 0$ and $\text{EvaluatedScheduledCount} > 0$).
+   - `pending`: Today's scheduled commitments awaiting check-in with zero completed or failed yet.
+   - `rest`: Zero commitments were scheduled ($0$ scheduled habits).
+   - `paused`: All applicable commitments on date $D$ were excluded due to an official pause.
+   - `future`: Date is strictly after the evaluation date ($D > D_{\text{eval}}$).
+
+4. **Batch Query Performance:**
+   Calendar adherence calculations execute over indexed date boundaries using `db.habitLogs.where('date').between(...)` and `db.auditRecords.where('habitId').anyOf(...)`. Individual cells are never calculated via repeated database round-trips.
+
+---
+
+## 5. Data Schema & Persistence (IndexedDB v3)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 
