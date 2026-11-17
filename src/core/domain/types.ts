@@ -201,18 +201,12 @@ export type UrgeLog = import('../urges/urgeTypes').UrgeLogRecord;
 
 
 // ==========================================
-// Focus Sessions (Module 8)
+// Focus Sessions & Pomodoro (M8)
 // ==========================================
-export const FocusSessionSchema = z.object({
-  id: z.string().uuid(),
-  habitId: z.string().uuid().optional(),
-  durationMinutes: z.number().positive(),
-  startedAt: z.string(),
-  completedAt: z.string().optional(),
-  status: z.enum(['completed', 'interrupted', 'in_progress']),
-  notes: z.string().optional(),
-});
-export type FocusSession = z.infer<typeof FocusSessionSchema>;
+export * from '../focus/focusTypes';
+export * from '../focus/focusSchemas';
+
+export type FocusSession = import('../focus/focusTypes').FocusSessionRecord;
 
 // ==========================================
 // User Settings & Privacy (Module 10)

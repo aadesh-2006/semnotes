@@ -54,6 +54,10 @@ export class SemnotesDatabase extends Dexie {
       morningIntentions: 'id, date, createdAt, updatedAt',
       eveningDebriefs: 'id, date, createdAt, updatedAt'
     });
+
+    this.version(5).stores({
+      focusSessions: 'id, habitId, startedAt, status, sessionMode, date, createdAt'
+    });
   }
 }
 
