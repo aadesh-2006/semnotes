@@ -1,9 +1,92 @@
 import { describe, it, expect } from 'vitest';
 import { TrendAnalysisService } from './trendAnalysisService';
 import { ConsistencyInsightsService } from './consistencyInsightsService';
+import { getWeekdayName, getWeekdayNameByIndex, WEEKDAY_NAMES } from './analyticsDateUtils';
 import type { DailyAdherencePoint, HabitPerformanceMetric } from './analyticsTypes';
 
 describe('TrendAnalysisService & ConsistencyInsightsService', () => {
+  describe('Date-Independent Weekday Utilities & Multi-Year Safety', () => {
+    it('accurately resolves canonical weekdays across leap years and multiple historical years', () => {
+      // 2024 (Leap Year)
+      expect(getWeekdayName('2024-02-29')).toBe('Thursday');
+      expect(getWeekdayName('2024-03-01')).toBe('Friday');
+
+      // 2025 (Standard Year)
+      expect(getWeekdayName('2025-01-01')).toBe('Wednesday');
+      expect(getWeekdayName('2025-12-31')).toBe('Wednesday');
+
+      // 2026
+      expect(getWeekdayName('2026-11-18')).toBe('Wednesday');
+
+      // 2027
+      expect(getWeekdayName('2027-12-31')).toBe('Friday');
+
+      // Weekday index lookup
+      expect(getWeekdayNameByIndex(0)).toBe('Sunday');
+      expect(getWeekdayNameByIndex(1)).toBe('Monday');
+      expect(getWeekdayNameByIndex(6)).toBe('Saturday');
+      expect(WEEKDAY_NAMES).toHaveLength(7);
+    });
+
+    it('aggregates weekday commitments seamlessly across multi-year and leap-year boundaries without drift', () => {
+      // 3 Mondays in Feb 2024 (Leap Year) and 3 Mondays in Jan 2025
+      const multiYearPoints: DailyAdherencePoint[] = [
+        // 2024 leap year: Feb 12, Feb 19, Feb 26 (all Mondays)
+        { date: '2024-02-12', displayDate: 'Feb 12', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+        { date: '2024-02-19', displayDate: 'Feb 19', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+        { date: '2024-02-26', displayDate: 'Feb 26', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+
+        // 2025: Jan 6, Jan 13, Jan 20 (all Mondays)
+        { date: '2025-01-06', displayDate: 'Jan 6', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+        { date: '2025-01-13', displayDate: 'Jan 13', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+        { date: '2025-01-20', displayDate: 'Jan 20', completedCount: 2, failedCount: 0, missedCount: 0, evaluatedCount: 2, completionPercentage: 100, rolling30Score: 100 },
+
+        // 6 Sundays in 2025 with 0 completions out of 6 evaluated
+        { date: '2025-01-05', displayDate: 'Jan 5', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 },
+        { date: '2025-01-12', displayDate: 'Jan 12', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 },
+        { date: '2025-01-19', displayDate: 'Jan 19', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 },
+        { date: '2025-01-26', displayDate: 'Jan 26', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 },
+        { date: '2025-02-02', displayDate: 'Feb 2', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 },
+        { date: '2025-02-09', displayDate: 'Feb 9', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: 50 }
+      ];
+
+      const insights = ConsistencyInsightsService.generateInsights(multiYearPoints, []);
+      expect(insights.length).toBeGreaterThanOrEqual(1);
+
+      const strongest = insights.find((i) => i.type === 'strongest_day');
+      expect(strongest).toBeDefined();
+      expect(strongest?.title).toContain('Monday');
+      expect(strongest?.metricValue).toBe('100%');
+
+      const weakest = insights.find((i) => i.type === 'weakest_day');
+      expect(weakest).toBeDefined();
+      expect(weakest?.title).toContain('Sunday');
+      expect(weakest?.metricValue).toBe('0%');
+    });
+
+    it('safely handles empty datasets and zero-denominator commitments without NaN', () => {
+      // Empty input
+      const emptyInsights = ConsistencyInsightsService.generateInsights([], []);
+      expect(emptyInsights).toEqual([]);
+
+      // Daily points with all zero evaluated count
+      const zeroEvaluatedDaily: DailyAdherencePoint[] = [
+        { date: '2026-11-01', displayDate: 'Nov 1', completedCount: 0, failedCount: 0, missedCount: 0, evaluatedCount: 0, completionPercentage: null, rolling30Score: null },
+        { date: '2026-11-02', displayDate: 'Nov 2', completedCount: 0, failedCount: 0, missedCount: 0, evaluatedCount: 0, completionPercentage: null, rolling30Score: null }
+      ];
+
+      const zeroInsights = ConsistencyInsightsService.generateInsights(zeroEvaluatedDaily, []);
+      expect(zeroInsights).toEqual([]);
+
+      const weekly = TrendAnalysisService.buildWeeklyAdherenceSeries(zeroEvaluatedDaily);
+      expect(weekly).toHaveLength(1);
+      expect(weekly[0].completionPercentage).toBeNull();
+
+      const monthly = TrendAnalysisService.buildMonthlyAdherenceSeries(zeroEvaluatedDaily);
+      expect(monthly).toHaveLength(1);
+      expect(monthly[0].completionPercentage).toBeNull();
+    });
+  });
   describe('TrendAnalysisService', () => {
     it('groups daily points into 7-day weekly adherence periods', () => {
       const mockDaily: DailyAdherencePoint[] = [
