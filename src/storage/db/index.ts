@@ -6,7 +6,9 @@ import type {
   Milestone,
   Achievement,
   JournalEntry,
-  UrgeLog,
+  UrgeLogRecord,
+  MorningIntention,
+  EveningDebrief,
   FocusSession,
   UserSettings
 } from '../../core/domain/types';
@@ -18,7 +20,9 @@ export class SemnotesDatabase extends Dexie {
   milestones!: Table<Milestone, string>;
   achievements!: Table<Achievement, string>;
   journalEntries!: Table<JournalEntry, string>;
-  urgeLogs!: Table<UrgeLog, string>;
+  urgeLogs!: Table<UrgeLogRecord, string>;
+  morningIntentions!: Table<MorningIntention, string>;
+  eveningDebriefs!: Table<EveningDebrief, string>;
   focusSessions!: Table<FocusSession, string>;
   userSettings!: Table<UserSettings & { id: string }, string>;
 
@@ -42,6 +46,13 @@ export class SemnotesDatabase extends Dexie {
     this.version(3).stores({
       milestones: 'id, habitId, thresholdDays, isEnabled, [habitId+thresholdDays], createdAt',
       achievements: 'id, habitId, milestoneId, thresholdDays, streakStartDate, isClaimed, achievedDate, [habitId+milestoneId+streakStartDate]'
+    });
+
+    this.version(4).stores({
+      journalEntries: 'id, date, isArchived, linkedHabitId, createdAt, updatedAt, *tags',
+      urgeLogs: 'id, date, timestamp, intensity, responseOutcome, linkedHabitId, createdAt, *triggerCategories',
+      morningIntentions: 'id, date, createdAt, updatedAt',
+      eveningDebriefs: 'id, date, createdAt, updatedAt'
     });
   }
 }
