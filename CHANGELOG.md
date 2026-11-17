@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.6] — 2026-11-17 (Milestone 6: Journal & Daily Reflection)
+
+### Added
+- **Privacy-First Reflection Subsystem:**
+  - Dedicated architecture spanning `src/core/reflection/`, `src/core/journal/`, and `src/core/urges/`:
+    - `ReflectionService`: Enforces one primary morning intention and evening debrief per calendar date, allowing updates and partial saves while maintaining data integrity.
+    - `JournalService`: Complete CRUD, search, and filtering service for private sovereign reflections with tags, linked habit associations, and self-reported emotional states.
+    - `UrgeDiagnosticService`: Pure descriptive diagnostic calculations (average intensity, highest/lowest, top triggers, response strategies, time-of-day slots) strictly isolated from habit streaks.
+- **Deterministic Prompt Rotation Engine:**
+  - `reflectionPromptEngine.ts` containing 24+ original SEMNÓTĒS prompts across 8 philosophical categories (`discipline`, `self_respect`, `gratitude`, `focus`, `growth`, `resilience`, `accountability`, `recovery`).
+  - Pure date hashing (`hashDateString`) and deterministic skip offsets without system-clock dependencies or external network requirements.
+  - Paired morning orientation and evening debrief prompt generation.
+- **Urge Tracking & Trigger Diagnostics:**
+  - Obsidian & Gold `UrgeSlider` (1–10 scale) with dynamic color ramps and tension labels.
+  - Interactive `TriggerSelector` with preset categories (`boredom`, `stress`, `loneliness`, `fatigue`, `anxiety`, `procrastination`, `environmental`, `social_media`, `habitual_routine`, `other`) and custom trigger context.
+  - Response strategies (`resisted`, `diverted`, `delayed`, `succumbed`, `unresolved`) and optional linked habit correlation.
+  - Strict domain invariant: Urges never create habit logs, alter streaks, or generate setbacks.
+- **Sovereign Journal Editor & Archives UI:**
+  - `JournalEditor`: Dual Write / Preview tabs with lightweight Markdown parsing, title, calendar date selection, tag management, linked habit dropdown, self-reported mood (1-5), and emotional state selector (`calm`, `focused`, `energized`, `victorious`, `reflective`, `neutral`, `anxious`, `fatigued`, `frustrated`).
+  - `JournalHistory`: Chronological timeline with full-text search, date ranges, multi-tag filter pills, linked habit filter, archive toggling, and pagination.
+  - `JournalView`: Tabbed reflection workspace with Daily Reflection, Private Journal, Urge Diagnostics, and Archives tabs.
+- **Command Center Integration:**
+  - Live reactive reflection status indicator (AM / PM completion badges).
+  - Authentic rotating philosophical prompt banner.
+  - Quick action links for setting morning intentions, completing evening debriefs, and emergency urge logging.
+  - Zero private text or sensitive urge logs exposed on the Command Center overview.
+- **Database Schema v4 Migration:**
+  - Added indexes in Dexie `semnotes_db` v4:
+    - `journalEntries`: `'id, date, isArchived, linkedHabitId, createdAt, updatedAt, *tags'`
+    - `urgeLogs`: `'id, date, timestamp, intensity, responseOutcome, linkedHabitId, createdAt, *triggerCategories'`
+    - `morningIntentions`: `'id, date, createdAt, updatedAt'`
+    - `eveningDebriefs`: `'id, date, createdAt, updatedAt'`
+  - Full preservation of existing M1–M5 habits, logs, audits, milestones, and achievements.
+- **Automated Test Suite:**
+  - Added 33 unit and workflow integration tests (`reflectionPromptEngine.test.ts`, `urgeDiagnosticService.test.ts`, `journalService.test.ts`, `reflectionService.test.ts`, `journalWorkflow.test.ts`), bringing total passing tests to 129/129 across 10 test suites.
+
+---
+
 ## [1.0.0-alpha.5] — 2026-11-17 (Milestone 5: Consistency Calendar & Discipline Heatmap)
 
 ### Added

@@ -2,11 +2,12 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--M5%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--M6%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
 [![Engine](https://img.shields.io/badge/Calendar%20Engine-Discipline%20Heatmap-C5A869.svg)](#consistency-calendar)
+[![Subsystem](https://img.shields.io/badge/Journal%20Subsystem-Privacy--First%20Reflection-C5A869.svg)](#privacy-first-journal)
 
 SEMNÓTĒS is a local-first, sovereign personal discipline operating system engineered for uncompromising self-mastery.
 
@@ -29,10 +30,10 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 
 - **Frontend:** React 19, TypeScript 5.7, Vite 6
 - **Styling:** Tailwind CSS (Obsidian & Gold Design System), Lucide React
-- **Persistence:** Dexie.js (IndexedDB v3) with reactive `useLiveQuery`
+- **Persistence:** Dexie.js (IndexedDB v4) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
-- **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), and Consistency Calendar Engine (`CalendarAggregationService`)
-- **Testing:** Vitest & React Testing Library (96/96 automated tests passing)
+- **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), and Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`, `reflectionPromptEngine`)
+- **Testing:** Vitest & React Testing Library (129/129 automated tests passing across 10 test suites)
 
 ---
 
@@ -40,12 +41,12 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 
 | Module | Purpose | Status |
 | :--- | :--- | :---: |
-| **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, and unclaimed reward alerts. | **Active (Live Engine)** |
+| **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, and reflection status shortcuts. | **Active (Live Engine)** |
 | **Streak Architect** | Full CRUD for independent abstinence, completion, and quantitative habits. | **Active (Live Engine)** |
 | **Streak History & Details** | Deep-dive forensic streak timeline, invariants grid, milestones section, and status management. | **Active (Live Engine)** |
 | **Milestones & Rewards** | Idempotent custom threshold rewards configured individually per streak with claim ledger. | **Active (Live Engine)** |
 | **Consistency Calendar** | Contribution heatmap, monthly calendar grid, day-by-day detail panel, and multi-dimensional filters. | **Active (Live Engine)** |
-| **Journal & Reflections** | Client-side encrypted journaling, urge logs, trigger diagnostics, and evening prompts. | M6 |
+| **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, urge diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
 | **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics) and variance trends. | M7 |
 | **Focus Mode** | Audited deep work timer (Pomodoro & sprints) with session logs. | M8 |
 | **Recovery Center** | Constructive setback protocols, trigger forensics, and return-to-routine checklists. | M8 |

@@ -148,30 +148,57 @@ The Consistency Calendar subsystem (`src/core/calendar/` and `src/features/calen
 
 ---
 
-## 5. Data Schema & Persistence (IndexedDB v3)
+## 5. Journal & Reflection Subsystem (M6)
+
+### A. Daily Reflection Architecture
+The reflection subsystem bifurcates daily introspection into two distinct temporal practices:
+1. **Morning Intention (`MorningIntention`):**
+   - Framing orientation: `primaryIntention`, `keyCommitment`, `potentialObstacle`, `plannedResponse`, and `personalNote`.
+   - Idempotency & History: Enforces one canonical morning intention per calendar date, allowing continuous refinement throughout the morning without overwriting historical audit logs.
+2. **Evening Debrief (`EveningDebrief`):**
+   - Retrospective evaluation: `wentWell`, `difficultiesFaced`, `lessonsLearned`, `tomorrowImprovements`, and `gratitude`.
+   - Supports partial saves and progressive closure before sleep.
+
+### B. Deterministic Philosophical Prompt Rotation Engine
+- **Zero Clock/Network Dependency:** Prompts are generated from pure date string hashes ($h(\text{YYYY-MM-DD})$) via `hashDateString`.
+- **Categories:** 24+ curated prompts across 8 philosophical domains (`discipline`, `self_respect`, `gratitude`, `focus`, `growth`, `resilience`, `accountability`, `recovery`).
+- **Paired Generation:** Morning prompts emphasize proactive intention and focus; evening prompts emphasize accountability, resilience, and gratitude.
+- **Skip Coprime Stepping:** Skipping a prompt applies coprime indexing ($(h + 7 \cdot \text{skip}) \pmod N$), guaranteeing non-repetitive cycling.
+
+### C. Urge Tracking & Trigger Diagnostics (Strict Isolation Invariant)
+- **Descriptive Diagnostics:** Quantifies friction on a 1–10 intensity scale with 10 trigger categories (`boredom`, `stress`, `loneliness`, `fatigue`, `anxiety`, `procrastination`, `environmental`, `social_media`, `habitual_routine`, `other`), response strategies (`resisted`, `diverted`, `delayed`, `succumbed`, `unresolved`), and custom situation notes.
+- **Strict Separation Invariant:**
+  $$\text{UrgeLog} \not\in \text{HabitLog} \quad \text{and} \quad \Delta \text{UrgeLog} \implies \Delta \text{Streak} = 0$$
+  Recording an urge (even with outcome `succumbed` or `unresolved`) is purely diagnostic and never generates a failed check-in or resets a habit streak.
+
+### D. Sovereign Private Journal & History
+- **Lightweight Markdown:** Support for headings, lists, blockquotes, and emphasis without heavy rich-text editor bloat.
+- **Full-Text Multi-Dimensional Queries:** Indexed queries supporting keyword text matching, date ranges, multi-tag filtering, linked habit filtering, and archival toggling with pagination.
+
+---
+
+## 6. Data Schema & Persistence (IndexedDB v4)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 
 - `habits`: `id, category, type, status, startDate, createdAt`
 - `habitLogs`: `id, habitId, date, status, [habitId+date]`
 - `auditRecords`: `id, habitId, habitLogId, date, action, timestamp`
-- `milestones`: `id, habitId, thresholdDays, isEnabled, [habitId+thresholdDays]`
-- `achievements`: `id, habitId, milestoneId, isClaimed, achievedDate, claimedAt, [habitId+streakStartDate], [habitId+milestoneId+streakStartDate]`
-- `journalEntries`: `id, date, mood, createdAt`
-- `urgeLogs`: `id, habitId, timestamp, intensity, response`
+- `milestones`: `id, habitId, thresholdDays, isEnabled, [habitId+thresholdDays], createdAt`
+- `achievements`: `id, habitId, milestoneId, thresholdDays, streakStartDate, isClaimed, achievedDate, [habitId+milestoneId+streakStartDate]`
+- `journalEntries`: `id, date, isArchived, linkedHabitId, createdAt, updatedAt, *tags` (v4)
+- `urgeLogs`: `id, date, timestamp, intensity, responseOutcome, linkedHabitId, createdAt, *triggerCategories` (v4)
+- `morningIntentions`: `id, date, createdAt, updatedAt` (v4)
+- `eveningDebriefs`: `id, date, createdAt, updatedAt` (v4)
 - `focusSessions`: `id, habitId, startedAt, status`
 - `userSettings`: `id`
 
 ---
 
-## 5. Security & Privacy Blueprint
+## 7. Security & Privacy Blueprint
 
-- **Zero Telemetry:** No third-party analytical SDKs or tracking cookies.
-- **Client-Side Encryption (Roadmap M8):** Web Crypto API AES-GCM 256-bit encryption for journal and urge logs before optional Supabase synchronization.
-
----
-
-## 5. Security & Privacy Blueprint
-
-- **Zero Telemetry:** No third-party analytical SDKs or tracking cookies.
-- **Client-Side Encryption (Roadmap M8):** Web Crypto API AES-GCM 256-bit encryption for journal and urge logs before optional Supabase synchronization.
+- **100% Local-First Storage:** All personal reflections, intentions, urges, and journal entries are persisted exclusively in local browser IndexedDB (`semnotes_db`).
+- **Zero Telemetry / Zero External AI Transmission:** No third-party analytical SDKs, cookies, or remote LLM transcription APIs. Private reflections never leave the user's device.
+- **Zero Console Data Leaks:** Sensitive journal text, intentions, and urge logs are never output to browser debugging consoles.
+- **Command Center Privacy Firewall:** Overview dashboards display only abstract completion badges (e.g. `AM Done`, `PM Done`) and anonymized action triggers; private text is never exposed on common screens.
+- **Client-Side Encryption Roadmap (M9):** Web Crypto API AES-GCM 256-bit encryption with PBKDF2/Argon2 password-derived keys will be implemented before optional multi-device cloud synchronization. Current storage is local client storage; no false security claims are made.

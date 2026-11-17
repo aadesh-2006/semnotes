@@ -8,8 +8,9 @@
 | **M2** | **Habit Management** | **DONE** | Full CRUD, Abstinence/Completion/Quantitative types, schedules, live IndexedDB. |
 | **M3** | **Strict Streak Engine** | **DONE** | Deterministic calculations, strict reset logic, audit records, timezone safety. |
 | **M4** | **Milestones & Rewards** | **DONE** | Custom milestone schedules, idempotent achievement detection, claim ledger. |
-| **M5** | **Journal & Reflection** | Planned | Private journal, urge diagnostic logger, mood & prompt tracking. |
-| **M6** | **Discipline Analytics** | Planned | Rolling 30-day score, Recharts visualizations, habit breakdown. |
+| **M5** | **Consistency Calendar** | **DONE** | 7-column monthly grid, 52-week heatmap, slide-over detail panel, pure aggregation engine. |
+| **M6** | **Journal & Reflection** | **DONE** | Privacy-first journal, morning intention, evening debrief, urge diagnostics, prompt rotation engine. |
+| **M7** | **Discipline Analytics** | Planned | Algorithmic Rolling 30-day Discipline Score, multi-series graphs, drop-off analysis. |
 | **M7** | **Focus & Recovery** | Planned | Audited focus timer, session stats, setback forensics checklist. |
 | **M8** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, Supabase optional sync. |
 | **M9** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
@@ -77,11 +78,18 @@
 - [x] Batched, indexed queries avoiding repeated cell-by-cell database access.
 - [x] Automated test suite covering 26 aggregation, leap-year, filter, boundary, and audit correction scenarios (96/96 Vitest tests passing).
 
-### M6 — Journal & Daily Reflection
-- [ ] Daily sovereign reflection editor.
-- [ ] 1-10 Urge Diagnostic slider with trigger tagging.
-- [ ] Morning and evening reflective prompts.
-- [ ] Searchable private history.
+### M6 — Journal & Daily Reflection (Completed)
+- [x] Dedicated sovereign reflection subsystem in `src/core/reflection/`, `src/core/journal/`, and `src/core/urges/`.
+- [x] Daily Morning Intention Card with primary intention, key commitment, obstacle framing, and planned response.
+- [x] Evening Debrief Card with wins, difficulties, lessons learned, gratitude, and tomorrow's improvements.
+- [x] Pure deterministic philosophical prompt rotation engine (`reflectionPromptEngine.ts`) with 8 categories and original SEMNÓTĒS prompts.
+- [x] Urge Diagnostic & Trigger Classification Service (`urgeDiagnosticService.ts`) with 1-10 intensity scale, 10 trigger categories, custom triggers, and response outcomes (`resisted`, `diverted`, `delayed`, `succumbed`, `unresolved`).
+- [x] Descriptive diagnostic statistics (average intensity, top trigger percentages, response distribution, time of day slots, zero habit/streak mutation).
+- [x] Private Journal Editor with Markdown support, live preview, tags, linked habit association, and self-reported emotional states.
+- [x] Searchable Journal History & Archives with full-text keyword search, date-range picker, tag pills, habit filters, and pagination.
+- [x] Local-first sovereign storage using Dexie IndexedDB schema v4, zero external telemetry or console leaks.
+- [x] Command Center integration with reactive reflection status badges, daily quote prompt, and quick urge logger.
+- [x] Automated test suite covering 33 new reflection, prompt, urge, journal, and workflow scenarios (129/129 Vitest tests passing).
 
 ### M7 — Discipline Analytics
 - [ ] Algorithmic Rolling 30-day Discipline Score calculation.
