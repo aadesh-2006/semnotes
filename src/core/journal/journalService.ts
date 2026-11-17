@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUUID } from '../utils';
 import { db } from '../../storage/db';
 import type {
   JournalEntry,
@@ -18,7 +18,7 @@ export class JournalService {
     const nowIso = new Date().toISOString();
 
     const entry: JournalEntry = {
-      id: uuidv4(),
+      id: generateUUID(),
       date: validated.date,
       title: validated.title?.trim() || '',
       content: validated.content.trim(),

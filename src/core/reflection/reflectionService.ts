@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUUID } from '../utils';
 import { db } from '../../storage/db';
 import type {
   MorningIntention,
@@ -38,7 +38,7 @@ export class ReflectionService {
     }
 
     const record: MorningIntention = {
-      id: uuidv4(),
+      id: generateUUID(),
       date: validated.date,
       primaryIntention: validated.primaryIntention.trim(),
       keyCommitment: validated.keyCommitment?.trim() || '',
@@ -88,7 +88,7 @@ export class ReflectionService {
     }
 
     const record: EveningDebrief = {
-      id: uuidv4(),
+      id: generateUUID(),
       date: validated.date,
       wentWell: validated.wentWell?.trim() || '',
       commitmentsFulfilled: validated.commitmentsFulfilled || [],
