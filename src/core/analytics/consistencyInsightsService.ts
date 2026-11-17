@@ -139,26 +139,28 @@ export class ConsistencyInsightsService {
     habitMetrics: HabitPerformanceMetric[]
   ): SetbackRecoveryMetric {
     let totalSetbacks = 0;
+    let setbackDaysWithFollowup = 0;
     let recoveredNextDayCount = 0;
 
-    for (let i = 0; i < dailyPoints.length - 1; i++) {
+    for (let i = 0; i < dailyPoints.length; i++) {
       const current = dailyPoints[i];
-      const next = dailyPoints[i + 1];
-
-      const hadSetback = current.failedCount > 0 || current.missedCount > 0;
-      if (hadSetback) {
+      const hasSetback = current.failedCount > 0 || current.missedCount > 0;
+      if (hasSetback) {
         totalSetbacks += current.failedCount + current.missedCount;
 
-        // Next day recovery: next day had evaluated commitments and 100% completion or no failures/misses
-        if (next.evaluatedCount > 0 && next.failedCount === 0 && next.missedCount === 0) {
-          recoveredNextDayCount++;
+        if (i < dailyPoints.length - 1) {
+          setbackDaysWithFollowup++;
+          const next = dailyPoints[i + 1];
+          if (next.evaluatedCount > 0 && next.failedCount === 0 && next.missedCount === 0) {
+            recoveredNextDayCount++;
+          }
         }
       }
     }
 
     const nextDayRecoveryRate =
-      totalSetbacks > 0
-        ? Math.min(100, Math.round((recoveredNextDayCount / Math.max(1, dailyPoints.filter(p => p.failedCount > 0 || p.missedCount > 0).length)) * 100))
+      setbackDaysWithFollowup > 0
+        ? Math.round((recoveredNextDayCount / setbackDaysWithFollowup) * 100)
         : null;
 
     const habitsWithRecurringMisses = habitMetrics
