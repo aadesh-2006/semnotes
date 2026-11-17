@@ -10,10 +10,11 @@
 | **M4** | **Milestones & Rewards** | **DONE** | Custom milestone schedules, idempotent achievement detection, claim ledger. |
 | **M5** | **Consistency Calendar** | **DONE** | 7-column monthly grid, 52-week heatmap, slide-over detail panel, pure aggregation engine. |
 | **M6** | **Journal & Reflection** | **DONE** | Privacy-first journal, morning intention, evening debrief, urge diagnostics, prompt rotation engine. |
-| **M7** | **Discipline Analytics** | **DONE** | Algorithmic Rolling 30-day Discipline Score, Recharts visualizations, habit performance, setback recovery. |
-| **M8** | **Focus & Recovery** | Planned | Audited focus timer, session stats, setback forensics checklist. |
-| **M8** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, Supabase optional sync. |
-| **M9** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
+| **M7** | **Discipline Analytics** | **DONE** | Algorithmic Rolling 30-day Discipline Score, Recharts visualizations, habit performance, consistency patterns. |
+| **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
+| **M8** | **Focus Mode & Custom Pomodoro** | Planned | Audited focus timer (Pomodoro & sprints), session logs, habit linking. |
+| **M9** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, local-first backup. |
+| **M10** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
 
 ---
 
@@ -103,17 +104,24 @@
 - [x] Category adherence performance breakdown with period deltas.
 - [x] Linear sliding-window trend series aggregation for daily, weekly, and monthly intervals (`TrendAnalysisService`).
 - [x] Sample-size bounded consistency patterns (strongest/weakest weekday, anchor habit, momentum/declining habit with $N \ge 5$).
-- [x] Zero-shame setback and recovery analytics (`RecoveryAnalytics`, next-day recovery rate).
+- [x] Factual commitment completion and missed commitment trend tracking (`CompletedVsMissedChart`).
 - [x] Obsidian & Gold Recharts visualizations (`DisciplineTrendChart`, `CompletedVsMissedChart`).
 - [x] Interactive analytics filter bar with 7D, 30D, 90D, 6M, 12M presets, custom date pickers, habit and category selectors (`AnalyticsFilters`).
 - [x] Command Center 5-column metrics integration with clickable 30D Discipline Score card navigating to analytics dashboard.
-- [x] Automated test suite covering 25 analytics scenarios (154/154 Vitest tests passing across 14 test suites).
+- [x] Automated test suite covering 25 analytics scenarios.
 
-### M8 — Focus & Recovery Protocol
-- [ ] Audited focus timer with Pomodoro and custom durations.
-- [ ] Session tagging linked to habits.
-- [ ] Constructive Setback Forensic workflow.
-- [ ] Return-to-routine somatic checklist.
+### M7.1 — Product Alignment & Analytics Cleanup (Completed)
+- [x] Product positioning aligned as universal personal discipline & habit tracking application (academics, fitness, reading, coding, sleep, routines).
+- [x] Removed recovery-specific analytics domain (`RecoveryAnalytics.tsx`, `calculateSetbackRecovery`, `SetbackRecoveryMetric`).
+- [x] Generalized consistency insight and chart terminology ("Lowest Adherence Day", "Most Consistent Habit", "Completed vs Missed Commitments").
+- [x] Date-independent deterministic weekday calculation across all years and leap years (`WEEKDAY_NAMES`).
+- [x] Consistent empty/insufficient data states without artificial 0% or 100% inflation.
+- [x] Multi-year regression tests (156/156 Vitest tests passing across 14 test suites).
+
+### M8 — Focus Mode & Custom Pomodoro
+- [ ] Audited focus timer with Pomodoro and custom sprint durations.
+- [ ] Focus session tagging linked to habits.
+- [ ] Focus history and daily deep-work statistics.
 
 ### M9 — Storage & Synchronisation
 - [ ] Complete database backup export (JSON) and restore (import).

@@ -2,13 +2,13 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), & M7 (Discipline Analytics) Complete
+**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), M7 (Discipline Analytics), & M7.1 (Product Alignment & Analytics Cleanup) Complete
 
 ---
 
 ## 1. Architectural Principles
 
-SEMNÓTĒS is architected with strict separation of concerns across four key layers:
+SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency across academic study, fitness, coding, reading, sleep, morning routines, and personal commitments. It is architected with strict separation of concerns across four key layers:
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -211,7 +211,7 @@ Scores with sufficient data ($\ge 1$ evaluated commitment) map deterministically
 
 ### E. Analytics Privacy Firewall
 - All calculations run 100% client-side in the browser via Dexie IndexedDB.
-- Journal entry text, morning intentions, and urge descriptions are strictly shielded from analytics aggregation. Only audited habit fulfillment statuses are aggregated.
+- All analytics calculations run locally in your browser. Private journal entries and personal reflections are never included in analytics calculations. Sensitive journal text, morning intentions, and urge descriptions are strictly shielded from analytics aggregation. Only audited habit fulfillment statuses are aggregated.
 
 ---
 

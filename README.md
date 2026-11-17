@@ -10,16 +10,16 @@
 [![Subsystem](https://img.shields.io/badge/Journal%20Subsystem-Privacy--First%20Reflection-C5A869.svg)](#privacy-first-journal)
 [![Analytics](https://img.shields.io/badge/Analytics%20Engine-Rolling%2030D%20Score-C5A869.svg)](#discipline-analytics)
 
-SEMNÓTĒS is a local-first, sovereign personal discipline operating system engineered for uncompromising self-mastery.
+SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency, fulfill commitments, and cultivate self-mastery across academics, fitness, reading, coding, routines, and personal commitments.
 
-Unlike casual gamified habit trackers designed for dopamine loops or superficial streaks, SEMNÓTĒS enforces strict adherence, auditable integrity, and constructive recovery without shame or toxic guilt.
+Unlike casual gamified habit trackers with vanity metrics and superficial streaks, SEMNÓTĒS enforces strict adherence, auditable integrity, and factual tracking without artificial multipliers or guilt-based messaging.
 
 ---
 
 ## 🏛️ Core Principles
 
 1. **Unforgiving Truth & Objective Auditing:** Missed scheduled commitments reset current streaks deterministically to zero. Historical milestones, total successful days, and longest streak records are preserved permanently.
-2. **True Streak Independence:** Abstinence tracking (e.g., digital purity, sobriety), completion habits (e.g., algorithm practice, reading), and quantitative targets (e.g., distance, hydration) run in complete isolation. Breaking one commitment never compromises another.
+2. **True Streak Independence:** Habit commitments—whether completion tasks (e.g. algorithmic practice, reading), quantitative targets (e.g. workout volume, distance, hydration), or abstinence commitments (e.g. screen time reduction)—run in complete isolation. An interruption in one routine never compromises another.
 3. **Idempotent Milestones & Meaningful Rewards:** Independent threshold day schedules per habit with immutable historical snapshots and isolated claim workflows that celebrate discipline without corrupting streak counters.
 4. **Forensic Consistency Calendar & Heatmap:** Monthly matrix and 52-week contribution heatmap calculating actual daily completion percentages with pending commitment isolation and day-by-day inspection.
 5. **Local-First Privacy:** All habit entities, daily logs, check-ins, milestones, and audit records reside on-device in IndexedDB (`semnotes_db` via Dexie.js).
@@ -34,7 +34,7 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 - **Persistence:** Dexie.js (IndexedDB v4) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), and Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`, `reflectionPromptEngine`)
-- **Testing:** Vitest & React Testing Library (154/154 automated tests passing across 14 test suites)
+- **Testing:** Vitest & React Testing Library (156/156 automated tests passing across 14 test suites)
 
 ---
 
@@ -43,14 +43,13 @@ Unlike casual gamified habit trackers designed for dopamine loops or superficial
 | Module | Purpose | Status |
 | :--- | :--- | :---: |
 | **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, live 30D score, and reflection status shortcuts. | **Active (Live Engine)** |
-| **Streak Architect** | Full CRUD for independent abstinence, completion, and quantitative habits. | **Active (Live Engine)** |
+| **Streak Architect** | Full CRUD for independent completion, quantitative, and abstinence habits. | **Active (Live Engine)** |
 | **Streak History & Details** | Deep-dive forensic streak timeline, invariants grid, milestones section, and status management. | **Active (Live Engine)** |
 | **Milestones & Rewards** | Idempotent custom threshold rewards configured individually per streak with claim ledger. | **Active (Live Engine)** |
 | **Consistency Calendar** | Contribution heatmap, monthly calendar grid, day-by-day detail panel, and multi-dimensional filters. | **Active (Live Engine)** |
-| **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, urge diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
-| **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, performance breakdowns, and recovery metrics. | **Active (Live Engine)** |
+| **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, routine diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
+| **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, habit performance breakdowns, and consistency patterns. | **Active (Live Engine)** |
 | **Focus Mode** | Audited deep work timer (Pomodoro & sprints) with session logs. | M8 |
-| **Recovery Center** | Constructive setback protocols, trigger forensics, and return-to-routine checklists. | M8 |
 | **Settings & Storage** | Local-first database management, JSON/CSV exports, and privacy toggles. | M9 |
 
 ---

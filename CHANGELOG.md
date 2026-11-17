@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.7.1] — 2026-11-18 (Milestone 7.1: Product Alignment & Analytics Cleanup)
+
+### Changed
+- **Universal Product Positioning:** Aligned product documentation and copy across SEMNÓTĒS as a general-purpose discipline and habit tracking platform (academics, fitness, reading, coding, sleep, routines).
+- **Generalized Analytics Terminology:**
+  - Replaced recovery-oriented titles with factual, neutral commitment terminology.
+  - "Lowest Adherence Day" replacing "Highest Resistance Day".
+  - "Most Consistent Habit" replacing "Anchor Habit".
+  - "Completed vs Missed Commitments" replacing "Fulfillment vs Friction".
+  - Clarified analytics empty states and privacy disclaimers: *"All analytics calculations run locally in your browser. Private journal entries and personal reflections are never included in analytics calculations."*
+- **Date-Independent Weekday Calculations:**
+  - Replaced arbitrary date generation in weekday aggregation with a static `WEEKDAY_NAMES` table mapped to JavaScript `getDay()` indexes (0–6), preventing calendar drift across years and leap years.
+
+### Removed
+- **Recovery Analytics Subsystem:**
+  - Removed `RecoveryAnalytics.tsx` component and associated metrics (`SetbackRecoveryMetric`, `calculateSetbackRecovery`).
+  - Removed recovery center from project roadmap to maintain universal discipline scope.
+
+### Fixed
+- **Empty & Insufficient Data State Handling:**
+  - Guaranteed no artificial 0% or 100% percentages appear when evaluated denominators are zero across all analytics panels.
+
+### Tested
+- Added multi-year and leap-year regression tests (2024, 2025, 2026, 2027) and zero-denominator safety tests. 156/156 Vitest tests passing across 14 test suites.
+
+---
+
 ## [1.0.0-alpha.7] — 2026-11-17 (Milestone 7: Discipline Analytics & Rolling 30-Day Score)
 
 ### Added
