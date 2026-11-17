@@ -1,117 +1,280 @@
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Activity, TrendingUp, Target } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../storage/db';
+import { formatCalendarDate, parseCalendarDate } from '../../core/utils';
+import { getPresetDateRange } from '../../core/analytics/analyticsDateUtils';
+import { DisciplineScoreEngine } from '../../core/analytics/disciplineScoreEngine';
+import { TrendAnalysisService } from '../../core/analytics/trendAnalysisService';
+import { HabitPerformanceService } from '../../core/analytics/habitPerformanceService';
+import { ConsistencyInsightsService } from '../../core/analytics/consistencyInsightsService';
+import type {
+  AnalyticsFilterCriteria,
+  AnalyticsTimePreset
+} from '../../core/analytics/analyticsTypes';
 
-export function AnalyticsView() {
+import { DisciplineScoreCard } from './DisciplineScoreCard';
+import { DisciplineTrendChart } from './DisciplineTrendChart';
+import { CompletedVsMissedChart } from './CompletedVsMissedChart';
+import { HabitPerformancePanel } from './HabitPerformancePanel';
+import { CategoryPerformancePanel } from './CategoryPerformancePanel';
+import { ConsistencyInsights } from './ConsistencyInsights';
+import { RecoveryAnalytics } from './RecoveryAnalytics';
+import { AnalyticsFilters } from './AnalyticsFilters';
+import { Badge } from '../../components/ui/badge';
+import { Activity, Shield } from 'lucide-react';
+
+export const AnalyticsView: React.FC = () => {
+  const todayStr = formatCalendarDate(new Date());
+
+  // Dexie live queries
+  const habits = useLiveQuery(() => db.habits.toArray(), []);
+  const logs = useLiveQuery(() => db.habitLogs.toArray(), []);
+  const audits = useLiveQuery(() => db.auditRecords.toArray(), []);
+
+  // Filter criteria state with fully resolved default date range
+  const [filters, setFilters] = useState<AnalyticsFilterCriteria>(() => {
+    const range = getPresetDateRange('30d', formatCalendarDate(new Date()));
+    return {
+      preset: '30d',
+      startDate: range.startDate,
+      endDate: range.endDate
+    };
+  });
+
+  // Window days calculation
+  const windowDays = useMemo(() => {
+    const dStart = parseCalendarDate(filters.startDate);
+    const dEnd = parseCalendarDate(filters.endDate);
+    const diff = Math.round((dEnd.getTime() - dStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, diff);
+  }, [filters.startDate, filters.endDate]);
+
+  // Filter handlers
+  const handlePresetChange = (preset: AnalyticsTimePreset) => {
+    if (preset === 'custom') {
+      setFilters((prev) => ({
+        ...prev,
+        preset: 'custom'
+      }));
+    } else {
+      const range = getPresetDateRange(preset, todayStr);
+      setFilters((prev) => ({
+        ...prev,
+        preset,
+        startDate: range.startDate,
+        endDate: range.endDate
+      }));
+    }
+  };
+
+  const handleStartDateChange = (newStart: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: 'custom',
+      startDate: newStart,
+      endDate: prev.endDate || todayStr
+    }));
+  };
+
+  const handleEndDateChange = (newEnd: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: 'custom',
+      startDate: prev.startDate,
+      endDate: newEnd
+    }));
+  };
+
+  const handleHabitChange = (habitId?: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      selectedHabitId: habitId
+    }));
+  };
+
+  const handleCategoryChange = (category?: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      selectedCategory: category
+    }));
+  };
+
+  const handleReset = () => {
+    const range = getPresetDateRange('30d', todayStr);
+    setFilters({
+      preset: '30d',
+      startDate: range.startDate,
+      endDate: range.endDate
+    });
+  };
+
+  // Filtered habits for calculations
+  const filteredHabits = useMemo(() => {
+    if (!habits) return [];
+    return habits.filter((h) => {
+      if (filters.selectedHabitId && h.id !== filters.selectedHabitId) return false;
+      if (filters.selectedCategory && h.category !== filters.selectedCategory) return false;
+      return true;
+    });
+  }, [habits, filters.selectedHabitId, filters.selectedCategory]);
+
+  // Calculate Headline Discipline Score Result
+  const scoreResult = useMemo(() => {
+    if (!habits) return null;
+    return DisciplineScoreEngine.calculateDisciplineScore(
+      filteredHabits,
+      logs || [],
+      audits || [],
+      {
+        evaluationDate: filters.endDate,
+        windowDays: windowDays
+      }
+    );
+  }, [filteredHabits, logs, audits, filters.endDate, windowDays]);
+
+  // Daily Adherence Series for Recharts
+  const dailyTrendSeries = useMemo(() => {
+    if (!habits) return [];
+    return TrendAnalysisService.buildDailyAdherenceSeries(
+      filters.startDate,
+      filters.endDate,
+      filteredHabits,
+      logs || [],
+      audits || [],
+      todayStr
+    );
+  }, [filteredHabits, logs, audits, filters.startDate, filters.endDate, todayStr]);
+
+  // Weekly & Monthly Series
+  const weeklyTrendSeries = useMemo(() => {
+    return TrendAnalysisService.buildWeeklyAdherenceSeries(dailyTrendSeries);
+  }, [dailyTrendSeries]);
+
+  const monthlyTrendSeries = useMemo(() => {
+    return TrendAnalysisService.buildMonthlyAdherenceSeries(dailyTrendSeries);
+  }, [dailyTrendSeries]);
+
+  // Habit Performance Metrics
+  const habitPerformances = useMemo(() => {
+    if (!habits) return [];
+    return HabitPerformanceService.calculateHabitPerformance(
+      habits,
+      logs || [],
+      audits || [],
+      {
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+        evaluationDate: todayStr,
+        filterHabitIds: filters.selectedHabitId ? [filters.selectedHabitId] : undefined,
+        filterCategories: filters.selectedCategory ? [filters.selectedCategory] : undefined
+      }
+    );
+  }, [habits, logs, audits, filters.startDate, filters.endDate, todayStr, filters.selectedHabitId, filters.selectedCategory]);
+
+  // Category Performance Metrics
+  const categoryPerformances = useMemo(() => {
+    return HabitPerformanceService.calculateCategoryPerformance(habitPerformances);
+  }, [habitPerformances]);
+
+  // Consistency Insights
+  const insights = useMemo(() => {
+    return ConsistencyInsightsService.generateInsights(dailyTrendSeries, habitPerformances);
+  }, [dailyTrendSeries, habitPerformances]);
+
+  // Setback Recovery Analytics
+  const recoveryMetric = useMemo(() => {
+    return ConsistencyInsightsService.calculateSetbackRecovery(
+      dailyTrendSeries,
+      habitPerformances
+    );
+  }, [dailyTrendSeries, habitPerformances]);
+
+  const isLoading = habits === undefined || logs === undefined || audits === undefined;
+
+  if (isLoading) {
+    return (
+      <div className="py-12 flex items-center justify-center">
+        <div className="flex items-center gap-2 text-gold-400 font-mono text-sm animate-pulse">
+          <Activity className="w-4 h-4 animate-spin" />
+          <span>Aggregating discipline ledger...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold font-display text-slate-100">
               Discipline Analytics
             </h2>
-            <Badge variant="gold" size="sm">M6 Domain</Badge>
+            <Badge variant="gold" size="sm">Audited Ledger</Badge>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Audited consistency, rolling 30-day discipline metrics, and transparent habit analytics.
+            Deterministic consistency auditing, rolling discipline scores, and zero-compromise habit analytics.
           </p>
+        </div>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <Badge variant="neutral" size="sm" className="font-mono text-[11px]">
+            Audited through {filters.endDate}
+          </Badge>
         </div>
       </div>
 
-      {/* Transparent Discipline Score Banner */}
-      <Card className="border-gold-600/40 bg-gradient-to-r from-obsidian-900 via-obsidian-850 to-obsidian-900">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-gold-400" />
-              <CardTitle className="text-base text-gold-300">
-                Transparent 30-Day Discipline Score: 94 / 100
-              </CardTitle>
-            </div>
-            <Badge variant="gold" size="sm">Algorithmic Adherence</Badge>
-          </div>
-          <CardDescription>
-            Calculated as: (Scheduled commitments fulfilled in last 30 days / Total scheduled commitments in last 30 days) × 100.
-            No inflated vanity metrics or artificial multipliers.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-3.5 rounded-xl bg-obsidian-800/80 border border-obsidian-750">
-              <span className="text-xs text-slate-400 block">Rolling Window</span>
-              <span className="text-lg font-bold font-mono text-slate-100 mt-1 block">30 Days</span>
-              <span className="text-[11px] text-slate-400">114 of 120 completed</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-obsidian-800/80 border border-obsidian-750">
-              <span className="text-xs text-slate-400 block">Relapse Impact</span>
-              <span className="text-lg font-bold font-mono text-amber-400 mt-1 block">-3.3% per missed day</span>
-              <span className="text-[11px] text-slate-400">Linear recovery rate</span>
-            </div>
-            <div className="p-3.5 rounded-xl bg-obsidian-800/80 border border-obsidian-750">
-              <span className="text-xs text-slate-400 block">Adherence Grade</span>
-              <span className="text-lg font-bold font-mono text-emerald-400 mt-1 block">Sovereign Tier</span>
-              <span className="text-[11px] text-slate-400">Top 5% consistency bracket</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filter Bar */}
+      <AnalyticsFilters
+        filters={filters}
+        habits={habits}
+        onPresetChange={handlePresetChange}
+        onStartDateChange={handleStartDateChange}
+        onEndDateChange={handleEndDateChange}
+        onHabitChange={handleHabitChange}
+        onCategoryChange={handleCategoryChange}
+        onReset={handleReset}
+      />
 
-      {/* Habit Breakdown Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border-obsidian-700/80 bg-obsidian-850">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Target className="w-4 h-4 text-gold-400" />
-              <span>Habit Completion Variance</span>
-            </CardTitle>
-            <CardDescription>Performance by tracking category</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[
-              { name: 'Abstinence & Digital Purity', rate: 98, color: 'bg-gold-400' },
-              { name: 'DSA & Algorithmic Practice', rate: 92, color: 'bg-emerald-400' },
-              { name: 'Physical Conditioning (Run / Calisthenics)', rate: 86, color: 'bg-sky-400' },
-              { name: 'Stoic Reading & Night Reflection', rate: 95, color: 'bg-indigo-400' },
-            ].map((item) => (
-              <div key={item.name} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-300">{item.name}</span>
-                  <span className="font-mono text-gold-300 font-semibold">{item.rate}%</span>
-                </div>
-                <div className="h-2 w-full bg-obsidian-900 rounded-full overflow-hidden border border-obsidian-750">
-                  <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.rate}%` }} />
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {/* Primary Discipline Score Card */}
+      {scoreResult && <DisciplineScoreCard scoreResult={scoreResult} />}
 
-        <Card className="border-obsidian-700/80 bg-obsidian-850">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-gold-400" />
-              <span>Recharts Integration Architecture</span>
-            </CardTitle>
-            <CardDescription>
-              Configured for M6 visualization engine
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 text-xs text-slate-300">
-            <p>
-              Recharts 2.x is bundled and ready. In Milestone 6, this panel will render interactive multi-line trend charts comparing:
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-slate-400">
-              <li>Urge frequency vs sleep hours</li>
-              <li>Weekday vs weekend adherence drop-off</li>
-              <li>Rolling 7-day vs 30-day discipline velocity</li>
-            </ul>
-            <div className="p-3 rounded-lg bg-obsidian-900 border border-obsidian-750 text-gold-300/80 font-mono text-[11px]">
-              Ready for M6 Chart Components & Recharts pipeline
-            </div>
-          </CardContent>
-        </Card>
+      {/* Interactive Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <DisciplineTrendChart
+          dailyPoints={dailyTrendSeries}
+          weeklyPoints={weeklyTrendSeries}
+          monthlyPoints={monthlyTrendSeries}
+        />
+        <CompletedVsMissedChart dailyPoints={dailyTrendSeries} />
+      </div>
+
+      {/* Performance Deep Dive: Habit & Category Breakdowns */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <HabitPerformancePanel habitMetrics={habitPerformances} />
+        <CategoryPerformancePanel categoryMetrics={categoryPerformances} />
+      </div>
+
+      {/* Consistency Patterns & Setback Recovery */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ConsistencyInsights insights={insights} />
+        <RecoveryAnalytics recoveryMetric={recoveryMetric} />
+      </div>
+
+      {/* Methodology & Privacy Notice */}
+      <div className="p-4 rounded-xl bg-obsidian-900/40 border border-obsidian-800 flex items-start gap-3 text-xs text-slate-400">
+        <Shield className="w-4 h-4 text-gold-400 shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="font-medium text-slate-300">
+            Algorithmic Integrity & Local Data Sovereignty
+          </p>
+          <p>
+            SEMNÓTĒS calculations run purely in your local browser sandbox via Dexie IndexedDB.
+            Discipline scores evaluate scheduled commitments only; rest days, paused periods, and future dates are strictly excluded from the denominator.
+            Private journal reflections and urge descriptions are never analyzed or aggregated.
+          </p>
+        </div>
       </div>
     </div>
   );
-}
+};

@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { HabitPerformanceService } from './habitPerformanceService';
-import type { Habit, HabitLog, AuditRecord } from '../domain/types';
+import type { Habit, HabitLog } from '../domain/types';
 
 describe('HabitPerformanceService', () => {
   const dummyHabit1: Habit = {
     id: 'h-1',
     title: 'Daily Meditation',
+    description: 'Mindfulness practice',
     category: 'mind',
     type: 'completion',
     schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
@@ -19,6 +20,7 @@ describe('HabitPerformanceService', () => {
   const dummyHabit2: Habit = {
     id: 'h-2',
     title: 'MWF Strength Training',
+    description: 'Physical strength conditioning',
     category: 'body',
     type: 'completion',
     schedule: { frequency: 'selected_days', selectedDays: [1, 3, 5] },
@@ -32,6 +34,7 @@ describe('HabitPerformanceService', () => {
   const dummyHabit3: Habit = {
     id: 'h-3',
     title: 'Digital Purity',
+    description: 'Abstinence commitment',
     category: 'abstinence',
     type: 'abstinence',
     schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },

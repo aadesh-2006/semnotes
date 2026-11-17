@@ -1,7 +1,7 @@
 import React from 'react';
 import type { AnalyticsFilterCriteria, AnalyticsTimePreset } from '../../core/analytics/analyticsTypes';
 import type { Habit } from '../../core/domain/types';
-import { Calendar, Filter, X } from 'lucide-react';
+import { Calendar, X } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 
 interface AnalyticsFiltersProps {

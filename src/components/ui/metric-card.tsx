@@ -13,6 +13,7 @@ export interface MetricCardProps {
   };
   highlight?: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 export function MetricCard({
@@ -23,12 +24,27 @@ export function MetricCard({
   icon,
   trend,
   highlight = false,
-  className
+  className,
+  onClick
 }: MetricCardProps) {
   return (
     <div
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className={cn(
         'relative p-5 rounded-xl border transition-all duration-200 overflow-hidden',
+        onClick && 'cursor-pointer hover:border-gold-500/70 hover:shadow-gold-sm active:scale-[0.99]',
         highlight
           ? 'bg-gradient-to-b from-obsidian-800 to-obsidian-850 border-gold-600/50 shadow-gold-sm'
           : 'bg-obsidian-850/80 border-obsidian-700/60 hover:border-obsidian-600/70',

@@ -1,5 +1,4 @@
 import { parseCalendarDate } from '../utils';
-import { getWeekdayName } from './analyticsDateUtils';
 import type {
   DailyAdherencePoint,
   HabitPerformanceMetric,

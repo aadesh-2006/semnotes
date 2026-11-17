@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import type { SetbackRecoveryMetric } from '../../core/analytics/analyticsTypes';
-import { ShieldCheck, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
+import { ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface RecoveryAnalyticsProps {
   recoveryMetric: SetbackRecoveryMetric;

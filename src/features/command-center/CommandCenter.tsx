@@ -6,6 +6,7 @@ import type { HabitStreakResult } from '../../core/streak/streakTypes';
 import { HabitLogService } from '../../core/services/habitLogService';
 import { StreakCalculator } from '../../core/streak/streakCalculator';
 import { StreakEngine } from '../../core/streak/streakEngine';
+import { DisciplineScoreEngine } from '../../core/analytics/disciplineScoreEngine';
 import { isScheduledDay } from '../../core/services/scheduleService';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { getDailyPrompts } from '../../core/reflection/reflectionPromptEngine';
@@ -29,7 +30,8 @@ import {
   Clock,
   Trophy,
   Sun,
-  Moon
+  Moon,
+  Activity
 } from 'lucide-react';
 
 interface CommandCenterProps {
@@ -173,6 +175,17 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
       .slice(0, 3);
   }, [allMilestones, habits, streakMap]);
 
+  // Rolling 30-Day Discipline Score for Command Center header
+  const disciplineScore = useMemo(() => {
+    if (!habits || !allLogs || !allAudits) return null;
+    return DisciplineScoreEngine.calculateDisciplineScore(
+      habits,
+      allLogs,
+      allAudits,
+      { evaluationDate: todayStr, windowDays: 30 }
+    );
+  }, [habits, allLogs, allAudits, todayStr]);
+
   const handleOpenCheckIn = (habit: Habit) => {
     setCheckInHabit(habit);
     setIsCheckInOpen(true);
@@ -279,15 +292,39 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
         </div>
       )}
 
-      {/* 4-Column Real Metrics Cards (Zero Mock Data) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5-Column Real Metrics Cards (Zero Mock Data) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <MetricCard
+          label="30D Discipline Score"
+          value={disciplineScore?.score !== null && disciplineScore?.score !== undefined ? `${disciplineScore.score}%` : 'N/A'}
+          unit={
+            disciplineScore?.adherenceGrade && disciplineScore.adherenceGrade !== 'insufficient_data'
+              ? disciplineScore.adherenceGrade.toUpperCase()
+              : ''
+          }
+          subtext={
+            disciplineScore?.hasSufficientData
+              ? `${disciplineScore.totalCompleted}/${disciplineScore.totalEvaluated} fulfilled`
+              : 'Awaiting evaluated logs'
+          }
+          trend={
+            disciplineScore?.scoreDelta !== null && disciplineScore?.scoreDelta !== undefined
+              ? {
+                  value: `${Math.abs(disciplineScore.scoreDelta)}% vs prev 30d`,
+                  isPositive: disciplineScore.scoreDelta >= 0
+                }
+              : undefined
+          }
+          icon={<Activity className="w-5 h-5 text-gold-400" />}
+          highlight={true}
+          onClick={() => onNavigate('analytics')}
+        />
         <MetricCard
           label="Active Streaks"
           value={activeStreaksCount}
           unit={`/ ${totalActiveCount} habits`}
           subtext="Independently maintained unbroken"
           icon={<Flame className="w-5 h-5 text-gold-400" />}
-          highlight={true}
         />
         <MetricCard
           label="Today's Fulfillment"

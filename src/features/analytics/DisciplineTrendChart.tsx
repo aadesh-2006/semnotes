@@ -15,7 +15,7 @@ import type {
   WeeklyAdherencePoint,
   MonthlyAdherencePoint
 } from '../../core/analytics/analyticsTypes';
-import { TrendingUp, BarChart3, Calendar } from 'lucide-react';
+import { TrendingUp, BarChart3 } from 'lucide-react';
 
 interface DisciplineTrendChartProps {
   dailyPoints: DailyAdherencePoint[];
