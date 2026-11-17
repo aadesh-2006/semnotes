@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.8] — 2026-11-18 (Milestone 8: Focus Mode & Custom Pomodoro Engine)
+
+### Added
+- **Deterministic Timestamp-Based Focus Timer Engine:**
+  - `FocusTimerEngine`: Absolute source-of-truth mathematical timekeeping using `(now - startTimestamp - accumulatedPausedMs)`, completely eliminating reliance on JavaScript `setInterval` counter ticks.
+  - Complete accuracy across inactive browser tabs, device sleep, background throttling, and page refreshes.
+  - Full timer controls: Start, Pause, Resume, Reset, Finish, End Early (Interrupted), and Cancel with confirmation modal.
+  - Digital monospace clock formatter and human-readable duration strings.
+- **Unrestricted Custom Focus Durations:**
+  - `DurationSelector`: Precise custom duration input supporting 1 minute to 12 hours (720 minutes).
+  - Built-in shortcuts for 15m, 25m, 50m, 90m, 120m, and 180m marathon sessions.
+  - Guaranteed single uninterrupted continuous focus sessions without forced breaks or automatic cycle splitting.
+- **Configurable Pomodoro Cycle State Machine:**
+  - `PomodoroEngine`: State machine supporting configurable focus duration, short break duration, long break duration, and cycles before long break.
+  - Supports automatic or manual phase transitions, plus break skipping capability.
+  - **Break Time Isolation Guarantee:** Break time is strictly isolated in `breakDurationSeconds` and is NEVER credited towards focused work duration.
+- **Persistent Timer State & Background Recovery:**
+  - `FocusPersistenceService`: Automatically serializes live timer state to `localStorage`. Reconciles time against wall-clock time on page reload, window focus, or visibility change.
+  - Automatically identifies abandoned sessions left unattended for over 24 hours.
+- **Offline Audio Chimes & Browser Notifications:**
+  - `FocusNotificationService`: Web Audio API synthesized soothing 3-tone harmonic chime (C5-E5-G5 with exponential decay) requiring zero external audio assets.
+  - HTML5 Desktop Notifications with graceful permission checks and fallbacks.
+- **Focus Session History & IndexedDB v5 Migration:**
+  - Upgraded Dexie `semnotes_db` to version 5, adding indexed fields: `'id, habitId, linkedHabitId, startedAt, status, sessionMode, date, createdAt'`.
+  - `FocusSessionService`: Full persistence CRUD supporting `completed`, `interrupted`, `cancelled`, and `abandoned` statuses.
+  - **Zero Habit & Streak Mutation Guarantee:** Completing a focus session NEVER creates habit logs, checks in habits, or modifies streaks/discipline scores.
+- **Focus Analytics Dashboard:**
+  - `FocusAnalyticsService` & `FocusAnalytics`: Pure deterministic calculations for total focused hours, completed sessions count, average session duration, longest session, daily focus outputs, habit focus distribution, and activity title breakdown.
+- **Command Center Live Integration:**
+  - Added dedicated *Focus & Deep Work* card to the Command Center overview with active timer status indicator, remaining time display, "Return to Active Session" shortcut, and today's focused time metrics.
+- **Comprehensive Automated Test Suite:**
+  - Added 31 unit and end-to-end integration tests across `focusTimerEngine.test.ts`, `pomodoroEngine.test.ts`, `focusSessionService.test.ts`, `focusAnalyticsService.test.ts`, and `focusWorkflow.test.ts`.
+  - Total passing automated test suite platform-wide: 187/187 tests passing across 19 test suites.
+
+---
+
 ## [1.0.0-alpha.7.1] — 2026-11-18 (Milestone 7.1: Product Alignment & Analytics Cleanup)
 
 ### Changed

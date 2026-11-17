@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), M7 (Discipline Analytics), & M7.1 (Product Alignment & Analytics Cleanup) Complete
+**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), M7 (Discipline Analytics), M7.1 (Product Alignment), & M8 (Focus Mode & Custom Pomodoro) Complete
 
 ---
 
@@ -215,7 +215,7 @@ Scores with sufficient data ($\ge 1$ evaluated commitment) map deterministically
 
 ---
 
-## 7. Data Schema & Persistence (IndexedDB v4)
+## 7. Data Schema & Persistence (IndexedDB v5)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 
@@ -228,12 +228,42 @@ The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `sr
 - `urgeLogs`: `id, date, timestamp, intensity, responseOutcome, linkedHabitId, createdAt, *triggerCategories` (v4)
 - `morningIntentions`: `id, date, createdAt, updatedAt` (v4)
 - `eveningDebriefs`: `id, date, createdAt, updatedAt` (v4)
-- `focusSessions`: `id, habitId, startedAt, status`
+- `focusSessions`: `id, habitId, linkedHabitId, startedAt, status, sessionMode, date, createdAt` (v5)
 - `userSettings`: `id`
 
 ---
 
-## 7. Security & Privacy Blueprint
+## 8. Focus Mode & Custom Pomodoro Engine (Formal Rules & Architecture)
+
+### A. Mathematical Formulation & Timestamp Source of Truth
+Let $T_{\text{start}}$ be the session or phase start timestamp in milliseconds.
+Let $D$ be the planned duration in seconds ($D_{\text{ms}} = D \times 1000$).
+Let $T_{\text{accumPaused}}$ be the total accumulated pause duration in milliseconds.
+
+For any evaluation timestamp $T_{\text{now}}$:
+1. **Running State:**
+   $$\text{elapsedSeconds} = \min\left(D, \, \max\left(0, \, \left\lfloor \frac{T_{\text{now}} - T_{\text{start}} - T_{\text{accumPaused}}}{1000} \right\rfloor\right)\right)$$
+   $$\text{remainingSeconds} = \max(0, \, D - \text{elapsedSeconds})$$
+2. **Paused State (at $T_{\text{pause}}$):**
+   $$\text{elapsedSeconds} = \min\left(D, \, \max\left(0, \, \left\lfloor \frac{T_{\text{pause}} - T_{\text{start}} - T_{\text{accumPaused}}}{1000} \right\rfloor\right)\right)$$
+3. **Resumption (at $T_{\text{resume}}$):**
+   $$T_{\text{accumPaused}} \leftarrow T_{\text{accumPaused}} + (T_{\text{resume}} - T_{\text{pause}})$$
+   $$T_{\text{targetEnd}} \leftarrow T_{\text{targetEnd}} + (T_{\text{resume}} - T_{\text{pause}})$$
+
+### B. True Unrestricted Custom Durations
+- Focus sessions support practically any duration from 1 minute to 720 minutes (12 hours).
+- Continuous custom sessions are never split into Pomodoro cycles or forced breaks. A 3-hour marathon session produces exactly one continuous 180-minute focus block.
+
+### C. Break Time Isolation Invariant
+- Break time (short breaks and long breaks) is strictly recorded in `breakDurationSeconds`.
+- Focused duration (`actualDurationSeconds`) strictly measures active focus phases. Break duration is NEVER credited towards focus time.
+
+### D. Zero Habit & Streak Mutation Guarantee
+- Focus sessions are analytical and temporal tools. Completing, interrupting, or cancelling a focus session NEVER creates a `HabitLog`, never checks in a habit, and never mutates streaks or rolling 30-day discipline scores.
+
+---
+
+## 9. Security & Privacy Blueprint
 
 - **100% Local-First Storage:** All personal reflections, intentions, urges, and journal entries are persisted exclusively in local browser IndexedDB (`semnotes_db`).
 - **Zero Telemetry / Zero External AI Transmission:** No third-party analytical SDKs, cookies, or remote LLM transcription APIs. Private reflections never leave the user's device.

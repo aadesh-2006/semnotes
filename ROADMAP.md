@@ -12,7 +12,7 @@
 | **M6** | **Journal & Reflection** | **DONE** | Privacy-first journal, morning intention, evening debrief, urge diagnostics, prompt rotation engine. |
 | **M7** | **Discipline Analytics** | **DONE** | Algorithmic Rolling 30-day Discipline Score, Recharts visualizations, habit performance, consistency patterns. |
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
-| **M8** | **Focus Mode & Custom Pomodoro** | Planned | Audited focus timer (Pomodoro & sprints), session logs, habit linking. |
+| **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
 | **M9** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, local-first backup. |
 | **M10** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
 
@@ -118,10 +118,20 @@
 - [x] Consistent empty/insufficient data states without artificial 0% or 100% inflation.
 - [x] Multi-year regression tests (156/156 Vitest tests passing across 14 test suites).
 
-### M8 — Focus Mode & Custom Pomodoro
-- [ ] Audited focus timer with Pomodoro and custom sprint durations.
-- [ ] Focus session tagging linked to habits.
-- [ ] Focus history and daily deep-work statistics.
+### M8 — Focus Mode & Custom Pomodoro (Completed)
+- [x] Pure deterministic timestamp-based focus timer engine (`FocusTimerEngine`).
+- [x] Unrestricted custom focus durations (1 minute to 12 hours / 720 minutes) without forced breaks.
+- [x] Support for uninterrupted 3-hour marathon sessions and customizable presets (15m, 25m, 50m, 90m, 120m, 180m).
+- [x] Configurable Pomodoro cycles with short/long break state machine (`PomodoroEngine`).
+- [x] Manual and automatic phase transitions, plus break skipping capability.
+- [x] Persistent timer state and background reconciliation across tab switches, sleep, and refreshes (`FocusPersistenceService`).
+- [x] Offline synthesized Web Audio API 3-tone harmonic completion chime and desktop notifications (`FocusNotificationService`).
+- [x] Persistent focus session history and query service in Dexie IndexedDB v5 (`FocusSessionService`).
+- [x] Optional habit linking and intention notes with complete data isolation.
+- [x] Strict invariant: Focus sessions NEVER automatically complete habits or mutate streaks/scores.
+- [x] Pure focus time analytics engine calculating total focused hours, daily output, and habit distributions (`FocusAnalyticsService`).
+- [x] Command Center integration with active timer preview and daily focus output metrics.
+- [x] Full test suite (187/187 tests passing across 19 test suites).
 
 ### M9 — Storage & Synchronisation
 - [ ] Complete database backup export (JSON) and restore (import).

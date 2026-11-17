@@ -2,13 +2,14 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--M7%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--M8%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
 [![Engine](https://img.shields.io/badge/Calendar%20Engine-Discipline%20Heatmap-C5A869.svg)](#consistency-calendar)
 [![Subsystem](https://img.shields.io/badge/Journal%20Subsystem-Privacy--First%20Reflection-C5A869.svg)](#privacy-first-journal)
 [![Analytics](https://img.shields.io/badge/Analytics%20Engine-Rolling%2030D%20Score-C5A869.svg)](#discipline-analytics)
+[![Focus](https://img.shields.io/badge/Focus%20Engine-Custom%20%26%20Pomodoro-C5A869.svg)](#focus-mode)
 
 SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency, fulfill commitments, and cultivate self-mastery across academics, fitness, reading, coding, routines, and personal commitments.
 
@@ -31,10 +32,10 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 
 - **Frontend:** React 19, TypeScript 5.7, Vite 6
 - **Styling:** Tailwind CSS (Obsidian & Gold Design System), Lucide React
-- **Persistence:** Dexie.js (IndexedDB v4) with reactive `useLiveQuery`
+- **Persistence:** Dexie.js (IndexedDB v5) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
-- **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), and Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`, `reflectionPromptEngine`)
-- **Testing:** Vitest & React Testing Library (156/156 automated tests passing across 14 test suites)
+- **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
+- **Testing:** Vitest & React Testing Library (187/187 automated tests passing across 19 test suites)
 
 ---
 
@@ -42,14 +43,14 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 
 | Module | Purpose | Status |
 | :--- | :--- | :---: |
-| **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, live 30D score, and reflection status shortcuts. | **Active (Live Engine)** |
+| **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, live 30D score, active focus preview, and reflection shortcuts. | **Active (Live Engine)** |
 | **Streak Architect** | Full CRUD for independent completion, quantitative, and abstinence habits. | **Active (Live Engine)** |
 | **Streak History & Details** | Deep-dive forensic streak timeline, invariants grid, milestones section, and status management. | **Active (Live Engine)** |
 | **Milestones & Rewards** | Idempotent custom threshold rewards configured individually per streak with claim ledger. | **Active (Live Engine)** |
 | **Consistency Calendar** | Contribution heatmap, monthly calendar grid, day-by-day detail panel, and multi-dimensional filters. | **Active (Live Engine)** |
 | **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, routine diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
 | **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, habit performance breakdowns, and consistency patterns. | **Active (Live Engine)** |
-| **Focus Mode** | Audited deep work timer (Pomodoro & sprints) with session logs. | M8 |
+| **Focus Mode** | Timestamp-driven custom focus (1m–12h), Pomodoro cycles, session history, and focus analytics. | **Active (Live Engine)** |
 | **Settings & Storage** | Local-first database management, JSON/CSV exports, and privacy toggles. | M9 |
 
 ---
