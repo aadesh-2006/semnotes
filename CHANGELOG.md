@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.7] — 2026-11-17 (Milestone 7: Discipline Analytics & Rolling 30-Day Score)
+
+### Added
+- **Rolling 30-Day Discipline Score Engine:**
+  - Dedicated analytical engine in `src/core/analytics/disciplineScoreEngine.ts`:
+    - Pure mathematical formula: $\text{Discipline Score} = \frac{\text{Completed}}{\text{Evaluated}} \times 100$ where $\text{Evaluated} = \text{Completed} + \text{Failed} + \text{Missed}$.
+    - Zero vanity metric guarantee: strictly excludes pending commitments on evaluation date, paused intervals, unscheduled rest days, and future dates from denominator.
+    - Deterministic handling of insufficient data: returns explicit `score: null` and `hasSufficientData: false` when evaluated count is zero, preventing fabricated percentages.
+    - Preceding 30-day window comparison with delta indicator ($\Delta \text{score}$).
+    - Adherence tier classifications: *Sovereign* ($\ge 90\%$), *Disciplined* ($75\% - 89\%$), *Stable* ($60\% - 74\%$), *Vulnerable* ($< 60\%$).
+- **Habit & Category Performance Analytics:**
+  - `HabitPerformanceService`: Calculates scheduled count, evaluated count, fulfillment %, current and longest streaks, and period delta per habit, respecting individual schedules (e.g. MWF vs daily).
+  - Categorical adherence breakdown aggregating fulfillment rates and period changes across life domains.
+- **Historical Trends & Visualizations:**
+  - `TrendAnalysisService`: Linear sliding-window algorithm aggregating daily, weekly, and monthly adherence series for Recharts without $O(N \times 30)$ nested array allocations.
+  - `DisciplineTrendChart`: Dual-curve area and line visualization in Obsidian & Gold with interactive daily/weekly/monthly granularity toggling.
+  - `CompletedVsMissedChart`: Visual bar chart comparing fulfilled commitments against friction points (failed/missed).
+- **Consistency Patterns & Setback Recovery:**
+  - `ConsistencyInsightsService`: Sample-size bounded observations ($N \ge 5$) detecting strongest/weakest weekdays, anchor habits, and momentum habits without psychological jargon.
+  - `RecoveryAnalytics`: Next-day recovery rate metric measuring resilience following slips, reinforcing that a slip is data rather than defeat.
+- **Interactive Analytics Filter Bar:**
+  - `AnalyticsFilters`: Time presets (7D, 30D, 90D, 6M, 12M, Custom), date range pickers, habit selector, category selector, and reset controls.
+- **Command Center Live Integration:**
+  - 5th metric card displaying the live 30-day Discipline Score, adherence tier badge, and period delta, linking directly to the full analytics dashboard.
+- **Automated Test Suite:**
+  - Added 25 unit and end-to-end integration tests (`disciplineScoreEngine.test.ts`, `habitPerformanceService.test.ts`, `trendAndInsights.test.ts`, `analyticsWorkflow.test.ts`), bringing total passing tests to 154/154 across 14 test suites.
+
+---
+
 ## [1.0.0-alpha.6] — 2026-11-17 (Milestone 6: Journal & Daily Reflection)
 
 ### Added

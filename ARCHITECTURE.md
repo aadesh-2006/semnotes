@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), & M4 (Custom Milestone & Reward Engine) Complete
+**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), & M7 (Discipline Analytics) Complete
 
 ---
 
@@ -177,7 +177,45 @@ The reflection subsystem bifurcates daily introspection into two distinct tempor
 
 ---
 
-## 6. Data Schema & Persistence (IndexedDB v4)
+## 6. Discipline Analytics Subsystem (Mathematical Formulation & Architecture)
+
+### A. Core Mathematical Formula
+The central metric of SEMNÓTĒS is the **Rolling 30-Day Discipline Score**:
+
+$$\text{Discipline Score} = \left( \frac{\sum \text{Completed Scheduled Commitments}}{\sum \text{Evaluated Scheduled Commitments}} \right) \times 100$$
+
+where:
+$$\text{Evaluated Scheduled Commitments} = \text{Completed} + \text{Failed} + \text{Missed}$$
+
+### B. Denominator Exclusion Invariants (Zero Vanity Inflation)
+1. **Pending Commitments Exclusion:** On $D_{\text{eval}}$, an unlogged commitment is marked `pending`. It is strictly excluded from `Evaluated` and does not penalize the user prematurely.
+2. **Paused Days Exclusion:** Days falling within verified pause intervals ($\text{status} = \text{paused}$) are completely excluded from `Evaluated`.
+3. **Unscheduled Rest Days Exclusion:** Days not configured in a habit's custom schedule (e.g. Tue/Thu for MWF schedule) are excluded from `Evaluated`.
+4. **Future Dates Exclusion:** Days $d > D_{\text{eval}}$ are strictly excluded.
+5. **Insufficient Data Invariant:**
+   $$\text{Evaluated} = 0 \implies \text{score: null}, \quad \text{hasSufficientData: false}, \quad \text{adherenceGrade: 'insufficient_data'}$$
+   The engine never manufactures arbitrary 0% or 100% scores when no evaluated data exists.
+
+### C. Sovereign Adherence Tier Brackets
+Scores with sufficient data ($\ge 1$ evaluated commitment) map deterministically to adherence tiers:
+- **Sovereign Tier:** $\text{Score} \ge 90\%$
+- **Disciplined Tier:** $75\% \le \text{Score} < 90\%$
+- **Stable Tier:** $60\% \le \text{Score} < 75\%$
+- **Vulnerable Tier:** $\text{Score} < 60\%$
+
+### D. Rolling Window Semantics & Linear Sliding Window
+- **Current Rolling Window:** A 30-day inclusive period: $[D_{\text{eval}} - 29, D_{\text{eval}}]$.
+- **Preceding Rolling Window:** The immediately preceding 30-day period: $[D_{\text{eval}} - 59, D_{\text{eval}} - 30]$.
+- **Period Delta:** $\Delta \text{score} = \text{score}_{\text{current}} - \text{score}_{\text{preceding}}$.
+- **Linear Sliding Window Algorithm ($O(N)$):** For multi-month trend series, rolling 30-day scores are computed using an incremental sliding window rather than $O(N \times 30)$ nested array allocations.
+
+### E. Analytics Privacy Firewall
+- All calculations run 100% client-side in the browser via Dexie IndexedDB.
+- Journal entry text, morning intentions, and urge descriptions are strictly shielded from analytics aggregation. Only audited habit fulfillment statuses are aggregated.
+
+---
+
+## 7. Data Schema & Persistence (IndexedDB v4)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 

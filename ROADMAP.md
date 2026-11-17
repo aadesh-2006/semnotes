@@ -10,8 +10,8 @@
 | **M4** | **Milestones & Rewards** | **DONE** | Custom milestone schedules, idempotent achievement detection, claim ledger. |
 | **M5** | **Consistency Calendar** | **DONE** | 7-column monthly grid, 52-week heatmap, slide-over detail panel, pure aggregation engine. |
 | **M6** | **Journal & Reflection** | **DONE** | Privacy-first journal, morning intention, evening debrief, urge diagnostics, prompt rotation engine. |
-| **M7** | **Discipline Analytics** | Planned | Algorithmic Rolling 30-day Discipline Score, multi-series graphs, drop-off analysis. |
-| **M7** | **Focus & Recovery** | Planned | Audited focus timer, session stats, setback forensics checklist. |
+| **M7** | **Discipline Analytics** | **DONE** | Algorithmic Rolling 30-day Discipline Score, Recharts visualizations, habit performance, setback recovery. |
+| **M8** | **Focus & Recovery** | Planned | Audited focus timer, session stats, setback forensics checklist. |
 | **M8** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, Supabase optional sync. |
 | **M9** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
 
@@ -91,10 +91,23 @@
 - [x] Command Center integration with reactive reflection status badges, daily quote prompt, and quick urge logger.
 - [x] Automated test suite covering 33 new reflection, prompt, urge, journal, and workflow scenarios (129/129 Vitest tests passing).
 
-### M7 — Discipline Analytics
-- [ ] Algorithmic Rolling 30-day Discipline Score calculation.
-- [ ] Multi-series consistency graphs.
-- [ ] Habit comparison matrix and drop-off analysis.
+### M7 — Discipline Analytics (Completed)
+- [x] Pure deterministic Rolling 30-Day Discipline Score engine (`DisciplineScoreEngine`).
+- [x] Strict mathematical formula: $\frac{\text{Completed}}{\text{Evaluated}} \times 100$, where $\text{Evaluated} = \text{Completed} + \text{Failed} + \text{Missed}$.
+- [x] Absolute exclusion of pending, paused, unscheduled rest days, and future dates from denominator.
+- [x] Explicit handling of insufficient data ($0 \text{ evaluated} \implies \text{score: null}, \text{insufficient\_data}$ grade).
+- [x] Adherence tier classifications: Sovereign ($\ge 90\%$), Disciplined ($75\% - 89\%$), Stable ($60\% - 74\%$), Vulnerable ($< 60\%$).
+- [x] Preceding 30-day window comparison and delta calculation ($\Delta \text{score}$).
+- [x] Pure local date range and rolling window utilities (`analyticsDateUtils.ts`).
+- [x] Individual habit performance service respecting schedule differences (MWF vs daily) and streaks (`HabitPerformanceService`).
+- [x] Category adherence performance breakdown with period deltas.
+- [x] Linear sliding-window trend series aggregation for daily, weekly, and monthly intervals (`TrendAnalysisService`).
+- [x] Sample-size bounded consistency patterns (strongest/weakest weekday, anchor habit, momentum/declining habit with $N \ge 5$).
+- [x] Zero-shame setback and recovery analytics (`RecoveryAnalytics`, next-day recovery rate).
+- [x] Obsidian & Gold Recharts visualizations (`DisciplineTrendChart`, `CompletedVsMissedChart`).
+- [x] Interactive analytics filter bar with 7D, 30D, 90D, 6M, 12M presets, custom date pickers, habit and category selectors (`AnalyticsFilters`).
+- [x] Command Center 5-column metrics integration with clickable 30D Discipline Score card navigating to analytics dashboard.
+- [x] Automated test suite covering 25 analytics scenarios (154/154 Vitest tests passing across 14 test suites).
 
 ### M8 — Focus & Recovery Protocol
 - [ ] Audited focus timer with Pomodoro and custom durations.
