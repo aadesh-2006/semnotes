@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-abyss: 7 7 9;
+    --color-surface: 14 14 18;
+    --color-card: 23 24 33;
+    --color-gold: 197 168 105;
+  }
+
+  * {
+    border-color: #282937;
+  }
+
+  body {
+    background-color: #070709;
+    color: #F4F4F6;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom Obsidian scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0D0E12;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #282937;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #685327;
+  }
+}
+
+@layer utilities {
+  .text-gold-gradient {
+    background: linear-gradient(135deg, #F4ECD8 0%, #D8BC7E 50%, #8F7538 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .border-gold-glow {
+    border-color: rgba(197, 168, 105, 0.35);
+    box-shadow: 0 0 15px -3px rgba(197, 168, 105, 0.15);
+  }
+
+  .card-obsidian {
+    background: #171821;
+    border: 1px solid #282937;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .card-obsidian:hover {
+    border-color: #3D3E52;
+  }
+}

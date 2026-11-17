@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="22" fill="#0D0E12"/>
+  <rect x="2" y="2" width="96" height="96" rx="20" stroke="#C5A869" stroke-opacity="0.4" stroke-width="2"/>
+  <!-- Stylized Greek Sigma & Golden Shield geometry -->
+  <path d="M28 28H72L48 50L72 72H28L38 60H56L42 50L56 40H38L28 28Z" fill="url(#goldGrad)"/>
+  <defs>
+    <linearGradient id="goldGrad" x1="28" y1="28" x2="72" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EADBAB"/>
+      <stop offset="0.5" stop-color="#C5A869"/>
+      <stop offset="1" stop-color="#8F7538"/>
+    </linearGradient>
+  </defs>
+</svg>
