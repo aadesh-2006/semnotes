@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { generateUUID } from '../utils';
 import { db } from '../../storage/db';
 import type {
   CreateUrgeLogInput,
@@ -22,7 +22,7 @@ export class UrgeDiagnosticService {
     const nowIso = new Date().toISOString();
 
     const record: UrgeLogRecord = {
-      id: uuidv4(),
+      id: generateUUID(),
       date: validated.date,
       timestamp: validated.timestamp || nowIso,
       intensity: validated.intensity,
