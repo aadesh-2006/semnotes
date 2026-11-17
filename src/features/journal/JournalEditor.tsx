@@ -68,7 +68,7 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
     let mounted = true;
     async function loadHabits() {
       try {
-        const allHabits = await HabitService.getActiveHabits();
+        const allHabits = await HabitService.getAllHabits({ status: 'active' });
         if (mounted) setHabits(allHabits);
       } catch (err) {
         console.error('Failed to load active habits for journal', err);
@@ -507,12 +507,12 @@ export const JournalEditor: React.FC<JournalEditorProps> = ({
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
         title="Permanently Delete Journal Entry"
-        message="Are you sure you want to delete this reflection? This action is irreversible."
+        description="Are you sure you want to delete this reflection? This action is irreversible."
         confirmLabel="Delete Permanently"
         cancelLabel="Keep Entry"
         variant="danger"
         onConfirm={handleDelete}
-        onCancel={() => setIsDeleteDialogOpen(false)}
+        onClose={() => setIsDeleteDialogOpen(false)}
       />
     </Card>
   );

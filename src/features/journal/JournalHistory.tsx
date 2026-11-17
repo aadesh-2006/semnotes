@@ -10,11 +10,9 @@ import {
   Search,
   Tag,
   Calendar,
-  Filter,
   Archive,
   Edit2,
   BookOpen,
-  ArrowRight,
   Smile,
   X
 } from 'lucide-react';
@@ -59,7 +57,7 @@ export const JournalHistory: React.FC<JournalHistoryProps> = ({
           offset: page * pageSize
         }),
         JournalService.getAllTags(),
-        HabitService.getActiveHabits()
+        HabitService.getAllHabits({ status: 'active' })
       ]);
 
       setEntries(res.entries);

@@ -122,8 +122,7 @@ describe('UrgeDiagnosticService', () => {
       await expect(
         UrgeDiagnosticService.recordUrge({
           date: '2026-11-17',
-          // @ts-expect-error test invalid boundary
-          intensity: 11,
+          intensity: 11 as any,
           triggerCategories: ['boredom'],
           responseOutcome: 'resisted'
         })
@@ -132,8 +131,7 @@ describe('UrgeDiagnosticService', () => {
       await expect(
         UrgeDiagnosticService.recordUrge({
           date: '2026-11-17',
-          // @ts-expect-error test invalid boundary
-          intensity: 0,
+          intensity: 0 as any,
           triggerCategories: ['boredom'],
           responseOutcome: 'resisted'
         })
