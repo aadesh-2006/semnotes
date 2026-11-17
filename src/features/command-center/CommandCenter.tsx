@@ -8,6 +8,7 @@ import { StreakCalculator } from '../../core/streak/streakCalculator';
 import { StreakEngine } from '../../core/streak/streakEngine';
 import { isScheduledDay } from '../../core/services/scheduleService';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
+import { getDailyPrompts } from '../../core/reflection/reflectionPromptEngine';
 import { MetricCard } from '../../components/ui/metric-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -26,7 +27,9 @@ import {
   Plus,
   Shield,
   Clock,
-  Trophy
+  Trophy,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface CommandCenterProps {
@@ -43,6 +46,8 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
   const allAudits = useLiveQuery(() => db.auditRecords.toArray(), []);
   const allMilestones = useLiveQuery(() => db.milestones.toArray(), []);
   const allAchievements = useLiveQuery(() => db.achievements.toArray(), []);
+  const morningIntention = useLiveQuery(() => db.morningIntentions.where('date').equals(todayStr).first(), [todayStr]);
+  const eveningDebrief = useLiveQuery(() => db.eveningDebriefs.where('date').equals(todayStr).first(), [todayStr]);
 
   // Check-in modal state
   const [checkInHabit, setCheckInHabit] = useState<Habit | null>(null);
@@ -624,33 +629,70 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
             </Card>
           )}
 
-          {/* Evening Reflection Prompt Card */}
-          <Card className="border-gold-600/30 bg-gradient-to-br from-obsidian-850 to-obsidian-900">
-            <CardHeader className="pb-3">
+          {/* Daily Reflection & Sovereign Debrief Card */}
+          <Card className="border-gold-600/30 bg-gradient-to-br from-obsidian-850 to-obsidian-900 shadow-md">
+            <CardHeader className="pb-3 border-b border-obsidian-750/70">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base flex items-center gap-2 text-gold-300">
                   <BookOpen className="w-4 h-4 text-gold-400" />
-                  <span>Daily Reflection Prompt</span>
+                  <span>Daily Stoic Reflection</span>
                 </CardTitle>
-                <Badge variant="gold-subtle" size="sm">
-                  Evening
-                </Badge>
+                <div className="flex items-center gap-1.5">
+                  {morningIntention && (
+                    <span className="text-[10px] flex items-center gap-1 font-mono text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded">
+                      <Sun className="w-2.5 h-2.5" /> AM Done
+                    </span>
+                  )}
+                  {eveningDebrief && (
+                    <span className="text-[10px] flex items-center gap-1 font-mono text-indigo-400 bg-indigo-950/60 border border-indigo-800/50 px-2 py-0.5 rounded">
+                      <Moon className="w-2.5 h-2.5" /> PM Done
+                    </span>
+                  )}
+                  {!morningIntention && !eveningDebrief && (
+                    <Badge variant="gold-subtle" size="sm">
+                      Sovereign Audit
+                    </Badge>
+                  )}
+                </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 pt-1">
-              <blockquote className="text-xs italic text-slate-300 border-l-2 border-gold-400/60 pl-3 py-1">
-                "Where did you feel resistance today, and how did your dignity respond?"
+            <CardContent className="space-y-3 pt-3">
+              <blockquote className="text-xs italic text-slate-300 border-l-2 border-gold-400/60 pl-3 py-1 font-serif">
+                "{getDailyPrompts(todayStr).evening.prompt}"
               </blockquote>
-              <p className="text-xs text-slate-400">
-                A 3-minute evening review anchors the subconscious mind into discipline before sleep.
+              <p className="text-[11px] text-slate-400">
+                Reflection grounds discipline in self-respect. Private, client-side records preserved offline.
               </p>
+
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('journal')}
+                  className="w-full text-xs border-amber-500/30 hover:border-amber-500/60 text-amber-300 gap-1.5"
+                >
+                  <Sun className="w-3 h-3 text-amber-400" />
+                  <span>{morningIntention ? 'Review AM' : 'Set AM Intention'}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onNavigate('journal')}
+                  className="w-full text-xs border-indigo-500/30 hover:border-indigo-500/60 text-indigo-300 gap-1.5"
+                >
+                  <Moon className="w-3 h-3 text-indigo-400" />
+                  <span>{eveningDebrief ? 'Review PM' : 'Complete Debrief'}</span>
+                </Button>
+              </div>
+
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => onNavigate('journal')}
-                className="w-full text-xs mt-1 border-gold-500/40 text-gold-300"
+                className="w-full text-xs text-slate-400 hover:text-gold-300 gap-1 py-1"
               >
-                Write Today's Entry
+                <span>Open Full Journal Workspace</span>
+                <ArrowRight className="w-3 h-3" />
               </Button>
             </CardContent>
           </Card>
