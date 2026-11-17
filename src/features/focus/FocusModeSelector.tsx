@@ -7,7 +7,6 @@
  * - Pomodoro Cycles (Configurable cycles with short and long breaks)
  */
 
-import React from 'react';
 import type { SessionMode } from '../../core/focus/focusTypes';
 import { Timer, RotateCcw } from 'lucide-react';
 

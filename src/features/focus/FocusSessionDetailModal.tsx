@@ -5,14 +5,12 @@
  * Detailed inspection of a historical focus session with complete audit telemetry.
  */
 
-import React from 'react';
 import type { FocusSessionRecord } from '../../core/focus/focusTypes';
 import { FocusTimerEngine } from '../../core/focus/focusTimerEngine';
 import { Modal } from '../../components/ui/modal';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
-  Clock,
   Calendar,
   Tag,
   Link2,
@@ -53,7 +51,7 @@ export function FocusSessionDetailModal({
         );
       case 'interrupted':
         return (
-          <Badge variant="amber" size="sm" className="font-mono gap-1">
+          <Badge variant="warning" size="sm" className="font-mono gap-1">
             <AlertTriangle className="w-3 h-3 text-amber-400" />
             <span>Interrupted Early</span>
           </Badge>
@@ -80,7 +78,7 @@ export function FocusSessionDetailModal({
       onClose={onClose}
       title="Focus Session Telemetry"
       description={`Session ID: ${session.id.substring(0, 8)}...`}
-      size="md"
+      maxWidth="md"
     >
       <div className="space-y-5 pt-2">
         {/* Header Badges */}

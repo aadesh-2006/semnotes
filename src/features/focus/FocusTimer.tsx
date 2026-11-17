@@ -9,7 +9,7 @@
  * - Accurate real-time rendering driven by FocusTimerEngine and timestamp reconciliation.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { LiveTimerState } from '../../core/focus/focusTypes';
 import { FocusTimerEngine } from '../../core/focus/focusTimerEngine';
 import { Badge } from '../../components/ui/badge';
@@ -94,7 +94,7 @@ export function FocusTimer({
 
     if (timerState.phase === 'short_break') {
       return (
-        <Badge variant="amber" size="sm" className="font-mono gap-1">
+        <Badge variant="warning" size="sm" className="font-mono gap-1">
           <Coffee className="w-3 h-3 text-amber-400" />
           <span>Short Break</span>
         </Badge>
@@ -102,7 +102,7 @@ export function FocusTimer({
     }
 
     return (
-      <Badge variant="indigo" size="sm" className="font-mono gap-1">
+      <Badge variant="gold-subtle" size="sm" className="font-mono gap-1">
         <Sparkles className="w-3 h-3 text-indigo-400" />
         <span>Long Break</span>
       </Badge>
@@ -221,7 +221,7 @@ export function FocusTimer({
       <div className="flex flex-wrap items-center justify-center gap-3 mt-8 relative z-10">
         {timerState.status === 'idle' && (
           <Button
-            variant="gold"
+            variant="primary"
             size="lg"
             disabled={disabled}
             onClick={onStart}
@@ -247,7 +247,7 @@ export function FocusTimer({
 
             {!isBreak && (
               <Button
-                variant="gold"
+                variant="primary"
                 size="lg"
                 disabled={disabled}
                 onClick={onComplete}
@@ -276,7 +276,7 @@ export function FocusTimer({
         {timerState.status === 'paused' && (
           <>
             <Button
-              variant="gold"
+              variant="primary"
               size="lg"
               disabled={disabled}
               onClick={onResume}
@@ -330,7 +330,7 @@ export function FocusTimer({
         onClose={() => setIsCancelModalOpen(false)}
         title="Discard Focus Session?"
         description="Are you sure you want to cancel this focus session? Cancelled sessions are not counted towards completed goals or focus time."
-        size="sm"
+        maxWidth="sm"
       >
         <div className="space-y-4 pt-2">
           <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-800/40 text-xs text-rose-300 flex items-start gap-2">
@@ -365,7 +365,7 @@ export function FocusTimer({
         onClose={() => setIsInterruptModalOpen(false)}
         title="End Focus Session Early?"
         description="Save your progress so far. The actual focused time elapsed will be recorded accurately."
-        size="sm"
+        maxWidth="sm"
       >
         <div className="space-y-4 pt-2">
           <div className="p-3 rounded-xl bg-obsidian-850 border border-obsidian-750 text-xs text-slate-300 space-y-1">
@@ -384,7 +384,7 @@ export function FocusTimer({
               Continue Focusing
             </Button>
             <Button
-              variant="gold"
+              variant="primary"
               size="sm"
               onClick={() => {
                 setIsInterruptModalOpen(false);

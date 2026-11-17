@@ -8,7 +8,7 @@
  * 3. Quick adjustment buttons (+15m, +30m, -15m).
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import type { FocusPreset } from '../../core/focus/focusTypes';
 import { DEFAULT_FOCUS_PRESETS } from '../../core/focus/focusTypes';
 import { Clock, Plus, Minus } from 'lucide-react';

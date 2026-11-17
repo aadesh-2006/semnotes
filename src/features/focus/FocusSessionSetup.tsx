@@ -9,7 +9,7 @@
  * - Pomodoro configuration modal trigger.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
 import type { SessionMode, PomodoroConfig } from '../../core/focus/focusTypes';

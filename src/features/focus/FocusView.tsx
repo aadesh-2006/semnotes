@@ -1,191 +1,573 @@
-import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
+/**
+ * SEMNÓTĒS — Focus Mode & Custom Pomodoro Engine
+ * Sovereign personal discipline operating system.
+ *
+ * Implements:
+ * 1. Timestamp-driven deterministic focus timer with tab reconciliation.
+ * 2. Unrestricted custom duration selection (1m to 720m).
+ * 3. Configurable Pomodoro cycles with short/long break state machine.
+ * 4. Persistent session history and analytics.
+ * 5. Web Audio API synthesized harmonic bell and desktop notifications.
+ */
+
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../../storage/db';
+import type { LiveTimerState, FocusPreferences as FocusPreferencesType, SessionMode, PomodoroConfig } from '../../core/focus/focusTypes';
+import { FocusTimerEngine } from '../../core/focus/focusTimerEngine';
+import { PomodoroEngine } from '../../core/focus/pomodoroEngine';
+import { FocusPersistenceService } from '../../core/focus/focusPersistenceService';
+import { FocusSessionService } from '../../core/focus/focusSessionService';
+import { FocusNotificationService } from '../../core/focus/focusNotificationService';
+import { FocusTimer } from './FocusTimer';
+import { DurationSelector } from './DurationSelector';
+import { FocusModeSelector } from './FocusModeSelector';
+import { FocusSessionSetup } from './FocusSessionSetup';
+import { FocusSessionHistory } from './FocusSessionHistory';
+import { FocusAnalytics } from './FocusAnalytics';
+import { FocusPreferences } from './FocusPreferences';
 import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Play, Pause, RotateCcw, Flame } from 'lucide-react';
+import { Timer, History, BarChart3, Settings2 } from 'lucide-react';
 
 export function FocusView() {
-  const [durationMinutes, setDurationMinutes] = useState(25);
-  const [secondsRemaining, setSecondsRemaining] = useState(25 * 60);
-  const [isActive, setIsActive] = useState(false);
-  const [sessionNotes, setSessionNotes] = useState('');
-  const [completedSessions, setCompletedSessions] = useState(3);
+  const [activeTab, setActiveTab] = useState<'timer' | 'history' | 'analytics' | 'preferences'>('timer');
+  const [preferences, setPreferences] = useState<FocusPreferencesType>(() => FocusPersistenceService.loadPreferences());
 
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (isActive && secondsRemaining > 0) {
-      interval = setInterval(() => {
-        setSecondsRemaining((prev) => prev - 1);
-      }, 1000);
-    } else if (secondsRemaining === 0 && isActive) {
-      setIsActive(false);
-      setCompletedSessions((prev) => prev + 1);
+  // Reactive Dexie queries
+  const allSessions = useLiveQuery(() => db.focusSessions.toArray(), []);
+  const activeHabits = useLiveQuery(() => db.habits.where('status').equals('active').toArray(), []);
+
+  const habitTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (activeHabits) {
+      for (const h of activeHabits) {
+        map.set(h.id, h.title);
+      }
     }
+    return map;
+  }, [activeHabits]);
+
+  // Timer Configuration State (before starting)
+  const [sessionTitle, setSessionTitle] = useState('Deep Work');
+  const [selectedDurationMins, setSelectedDurationMins] = useState(preferences.defaultDurationMinutes);
+  const [sessionMode, setSessionMode] = useState<SessionMode>(preferences.defaultMode);
+  const [linkedHabitId, setLinkedHabitId] = useState<string | undefined>(undefined);
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [pomodoroConfig, setPomodoroConfig] = useState<PomodoroConfig>(preferences.pomodoroConfig);
+
+  // Live Timer State (active run)
+  const [timerState, setTimerState] = useState<LiveTimerState>(() => {
+    const saved = FocusPersistenceService.loadActiveTimer();
+    if (saved) return saved;
+
+    return FocusTimerEngine.createInitialState({
+      title: 'Deep Work',
+      sessionMode: preferences.defaultMode,
+      durationMinutes: preferences.defaultDurationMinutes,
+      pomodoroConfig: preferences.pomodoroConfig,
+    });
+  });
+
+  // Clock tick state for UI re-rendering
+  const [nowMs, setNowMs] = useState(Date.now());
+  const timerCreatedInDbRef = useRef<boolean>(false);
+
+  // Sync timer title/habit/notes if idle
+  useEffect(() => {
+    if (timerState.status === 'idle') {
+      setTimerState(
+        FocusTimerEngine.createInitialState({
+          title: sessionTitle,
+          sessionMode,
+          durationMinutes: selectedDurationMins,
+          linkedHabitId,
+          notes: sessionNotes,
+          pomodoroConfig,
+        })
+      );
+    }
+  }, [sessionTitle, selectedDurationMins, sessionMode, linkedHabitId, sessionNotes, pomodoroConfig, timerState.status]);
+
+  // Real-time animation/timer loop
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    if (timerState.status === 'running') {
+      intervalId = setInterval(() => {
+        const now = Date.now();
+        setNowMs(now);
+
+        // Check for phase completion
+        if (FocusTimerEngine.isExpired(timerState, now)) {
+          handlePhaseExpiration(now);
+        }
+      }, 500);
+    }
+
     return () => {
-      if (interval) clearInterval(interval);
+      if (intervalId) clearInterval(intervalId);
     };
-  }, [isActive, secondsRemaining]);
+  }, [timerState]);
 
-  const handleSelectDuration = (mins: number) => {
-    setIsActive(false);
-    setDurationMinutes(mins);
-    setSecondsRemaining(mins * 60);
-  };
+  // Window visibility and tab focus reconciliation
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && timerState.status === 'running') {
+        const now = Date.now();
+        setNowMs(now);
+        const reconciled = FocusTimerEngine.reconcile(timerState, now);
+        setTimerState(reconciled);
+        FocusPersistenceService.saveActiveTimer(reconciled);
 
-  const handleReset = () => {
-    setIsActive(false);
-    setSecondsRemaining(durationMinutes * 60);
-  };
+        if (FocusTimerEngine.isExpired(reconciled, now)) {
+          handlePhaseExpiration(now);
+        }
+      }
+    };
 
-  const formatTime = (secs: number) => {
-    const mins = Math.floor(secs / 60);
-    const remainderSecs = secs % 60;
-    return `${String(mins).padStart(2, '0')}:${String(remainderSecs).padStart(2, '0')}`;
-  };
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
-  const progressPercent = Math.round(
-    ((durationMinutes * 60 - secondsRemaining) / (durationMinutes * 60)) * 100
+    return () => {
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [timerState]);
+
+  // Handle phase expiration (Focus or Break)
+  const handlePhaseExpiration = useCallback(
+    async (now: number) => {
+      if (preferences.soundEnabled) {
+        FocusNotificationService.playCompletionChime(preferences.soundVolume);
+      }
+
+      if (preferences.notificationsEnabled) {
+        const phaseName = timerState.phase === 'focus' ? 'Focus Phase Complete' : 'Break Finished';
+        FocusNotificationService.sendNotification(
+          `SEMNÓTĒS — ${phaseName}`,
+          `${timerState.title}: Time is up. Take a well-earned breath.`
+        );
+      }
+
+      if (timerState.sessionMode === 'pomodoro') {
+        // Transition to next cycle phase
+        const nextState = PomodoroEngine.transitionToNextPhase(timerState, now);
+        setTimerState(nextState);
+        FocusPersistenceService.saveActiveTimer(nextState);
+
+        // Update Dexie record with latest progress
+        try {
+          const totalFocus = PomodoroEngine.getTotalFocusedSeconds(nextState, now);
+          const totalBreak = PomodoroEngine.getTotalBreakSeconds(nextState, now);
+          await FocusSessionService.completeSession(nextState.sessionId, totalFocus, {
+            breakDurationSeconds: totalBreak,
+            completedCycles: nextState.completedCycles,
+          });
+        } catch {
+          // If not in DB yet, create it
+        }
+      } else {
+        // Custom focus session completed
+        const completedState: LiveTimerState = {
+          ...timerState,
+          status: 'completed',
+        };
+        setTimerState(completedState);
+        FocusPersistenceService.clearActiveTimer();
+
+        try {
+          await FocusSessionService.completeSession(
+            timerState.sessionId,
+            timerState.plannedDurationSeconds,
+            { notes: timerState.notes }
+          );
+        } catch {
+          // In case session wasn't already registered
+          await FocusSessionService.createSession({
+            title: timerState.title,
+            sessionMode: timerState.sessionMode,
+            linkedHabitId: timerState.linkedHabitId,
+            plannedDurationMinutes: Math.round(timerState.plannedDurationSeconds / 60),
+            notes: timerState.notes,
+          }).then((s) =>
+            FocusSessionService.completeSession(s.id, timerState.plannedDurationSeconds, {
+              notes: timerState.notes,
+            })
+          );
+        }
+      }
+    },
+    [timerState, preferences]
   );
+
+  // Timer Control Handlers
+  const handleStartTimer = async () => {
+    const now = Date.now();
+    const running = FocusTimerEngine.start(timerState, now);
+    setTimerState(running);
+    setNowMs(now);
+    FocusPersistenceService.saveActiveTimer(running);
+
+    // Register session in Dexie DB
+    if (!timerCreatedInDbRef.current) {
+      try {
+        await FocusSessionService.createSession({
+          title: running.title,
+          sessionMode: running.sessionMode,
+          linkedHabitId: running.linkedHabitId,
+          plannedDurationMinutes: Math.round(running.plannedDurationSeconds / 60),
+          notes: running.notes,
+          startedAt: new Date(running.startTimestamp).toISOString(),
+        });
+        timerCreatedInDbRef.current = true;
+      } catch {
+        // Silently handle
+      }
+    }
+  };
+
+  const handlePauseTimer = () => {
+    const now = Date.now();
+    const paused = FocusTimerEngine.pause(timerState, now);
+    setTimerState(paused);
+    setNowMs(now);
+    FocusPersistenceService.saveActiveTimer(paused);
+  };
+
+  const handleResumeTimer = () => {
+    const now = Date.now();
+    const resumed = FocusTimerEngine.resume(timerState, now);
+    setTimerState(resumed);
+    setNowMs(now);
+    FocusPersistenceService.saveActiveTimer(resumed);
+  };
+
+  const handleResetTimer = () => {
+    const now = Date.now();
+    const reset = FocusTimerEngine.reset(timerState, now);
+    setTimerState(reset);
+    setNowMs(now);
+    FocusPersistenceService.saveActiveTimer(reset);
+  };
+
+  const handleCompleteSession = async () => {
+    const now = Date.now();
+    const totalFocused = PomodoroEngine.getTotalFocusedSeconds(timerState, now);
+    const totalBreak = PomodoroEngine.getTotalBreakSeconds(timerState, now);
+
+    try {
+      await FocusSessionService.completeSession(timerState.sessionId, totalFocused, {
+        notes: timerState.notes,
+        breakDurationSeconds: totalBreak,
+        completedCycles: timerState.completedCycles,
+      });
+    } catch {
+      // Create and complete
+      const s = await FocusSessionService.createSession({
+        title: timerState.title,
+        sessionMode: timerState.sessionMode,
+        linkedHabitId: timerState.linkedHabitId,
+        plannedDurationMinutes: Math.round(timerState.plannedDurationSeconds / 60),
+        notes: timerState.notes,
+      });
+      await FocusSessionService.completeSession(s.id, totalFocused, {
+        notes: timerState.notes,
+        breakDurationSeconds: totalBreak,
+        completedCycles: timerState.completedCycles,
+      });
+    }
+
+    if (preferences.soundEnabled) {
+      FocusNotificationService.playCompletionChime(preferences.soundVolume);
+    }
+
+    FocusPersistenceService.clearActiveTimer();
+    timerCreatedInDbRef.current = false;
+
+    // Reset to idle for next session
+    setTimerState(
+      FocusTimerEngine.createInitialState({
+        title: sessionTitle,
+        sessionMode,
+        durationMinutes: selectedDurationMins,
+        linkedHabitId,
+        notes: sessionNotes,
+        pomodoroConfig,
+      })
+    );
+  };
+
+  const handleInterruptSession = async () => {
+    const now = Date.now();
+    const totalFocused = PomodoroEngine.getTotalFocusedSeconds(timerState, now);
+    const totalBreak = PomodoroEngine.getTotalBreakSeconds(timerState, now);
+
+    try {
+      await FocusSessionService.interruptSession(timerState.sessionId, totalFocused, {
+        notes: timerState.notes,
+        breakDurationSeconds: totalBreak,
+        completedCycles: timerState.completedCycles,
+      });
+    } catch {
+      // Create and interrupt
+      const s = await FocusSessionService.createSession({
+        title: timerState.title,
+        sessionMode: timerState.sessionMode,
+        linkedHabitId: timerState.linkedHabitId,
+        plannedDurationMinutes: Math.round(timerState.plannedDurationSeconds / 60),
+        notes: timerState.notes,
+      });
+      await FocusSessionService.interruptSession(s.id, totalFocused, {
+        notes: timerState.notes,
+        breakDurationSeconds: totalBreak,
+        completedCycles: timerState.completedCycles,
+      });
+    }
+
+    FocusPersistenceService.clearActiveTimer();
+    timerCreatedInDbRef.current = false;
+
+    setTimerState(
+      FocusTimerEngine.createInitialState({
+        title: sessionTitle,
+        sessionMode,
+        durationMinutes: selectedDurationMins,
+        linkedHabitId,
+        notes: sessionNotes,
+        pomodoroConfig,
+      })
+    );
+  };
+
+  const handleCancelSession = async () => {
+    try {
+      await FocusSessionService.cancelSession(timerState.sessionId);
+    } catch {
+      // Ignore if not in DB
+    }
+
+    FocusPersistenceService.clearActiveTimer();
+    timerCreatedInDbRef.current = false;
+
+    setTimerState(
+      FocusTimerEngine.createInitialState({
+        title: sessionTitle,
+        sessionMode,
+        durationMinutes: selectedDurationMins,
+        linkedHabitId,
+        notes: sessionNotes,
+        pomodoroConfig,
+      })
+    );
+  };
+
+  const handleSkipBreak = () => {
+    const now = Date.now();
+    const skipped = PomodoroEngine.skipBreak(timerState, now);
+    setTimerState(skipped);
+    setNowMs(now);
+    FocusPersistenceService.saveActiveTimer(skipped);
+  };
+
+  const handleDeleteSession = async (id: string) => {
+    await FocusSessionService.deleteSession(id);
+  };
+
+  const handleSavePreferences = (newPrefs: FocusPreferencesType) => {
+    setPreferences(newPrefs);
+    FocusPersistenceService.savePreferences(newPrefs);
+  };
+
+  // Live computed metrics for current phase
+  const remainingSecs = FocusTimerEngine.calculateRemainingSeconds(timerState, nowMs);
+  const elapsedSecs = FocusTimerEngine.calculateElapsedSeconds(timerState, nowMs);
+  const progressPct = FocusTimerEngine.calculateProgress(timerState, nowMs);
+
+  const completedTodayCount = useMemo(() => {
+    if (!allSessions) return 0;
+    const todayStr = new Date().toISOString().substring(0, 10);
+    return allSessions.filter((s) => s.date === todayStr && s.status === 'completed').length;
+  }, [allSessions]);
 
   return (
     <div className="space-y-6">
+      {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-xl sm:text-2xl font-bold font-display text-slate-100">
               Focus Mode & Deep Work
             </h2>
-            <Badge variant="gold" size="sm">Module 8 Active</Badge>
+            <Badge variant="gold" size="sm">
+              Module 8 Active
+            </Badge>
           </div>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Distraction-free environment for uncompromising deep work sessions.
+            Uncompromising, distraction-free environment for continuous focus sessions and Pomodoro cycles.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Badge variant="gold-subtle" size="md" className="font-mono">
-            {completedSessions} Sessions Completed Today
+            {completedTodayCount} Sessions Completed Today
           </Badge>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Main Timer Display */}
-        <div className="lg:col-span-7">
-          <Card className="border-gold-600/40 bg-gradient-to-b from-obsidian-850 to-obsidian-900 text-center py-8 px-6">
-            <div className="max-w-md mx-auto space-y-6">
-              {/* Presets */}
-              <div className="flex justify-center gap-2">
-                {[
-                  { label: 'Pomodoro (25m)', mins: 25 },
-                  { label: 'Deep Work (50m)', mins: 50 },
-                  { label: 'Quick Sprint (15m)', mins: 15 },
-                ].map((preset) => (
-                  <button
-                    key={preset.mins}
-                    onClick={() => handleSelectDuration(preset.mins)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      durationMinutes === preset.mins
-                        ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-gold-sm font-semibold'
-                        : 'bg-obsidian-800 text-slate-400 hover:text-slate-200 border border-obsidian-750'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-1.5 border-b border-obsidian-750 pb-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('timer')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            activeTab === 'timer'
+              ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-gold-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
+          }`}
+        >
+          <Timer className="w-3.5 h-3.5" />
+          <span>Focus Timer</span>
+        </button>
 
-              {/* Big Digital Clock */}
-              <div className="relative py-8">
-                <span className="font-mono text-6xl sm:text-7xl font-bold tracking-tight text-slate-100 tabular-nums select-none drop-shadow-md">
-                  {formatTime(secondsRemaining)}
-                </span>
-                <div className="w-48 h-1 mx-auto bg-obsidian-750 rounded-full mt-4 overflow-hidden">
-                  <div
-                    className="h-full bg-gold-400 transition-all duration-300"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-              </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('history')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            activeTab === 'history'
+              ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-gold-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>Session History</span>
+          {allSessions && allSessions.length > 0 && (
+            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-obsidian-750 text-slate-300">
+              {allSessions.length}
+            </span>
+          )}
+        </button>
 
-              {/* Controls */}
-              <div className="flex justify-center items-center gap-4">
-                <Button
-                  variant="secondary"
-                  size="icon"
-                  onClick={handleReset}
-                  title="Reset Timer"
-                  aria-label="Reset Timer"
-                >
-                  <RotateCcw className="w-4 h-4 text-slate-400 hover:text-slate-200" />
-                </Button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('analytics')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            activeTab === 'analytics'
+              ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-gold-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
+          }`}
+        >
+          <BarChart3 className="w-3.5 h-3.5" />
+          <span>Focus Analytics</span>
+        </button>
 
-                <Button
-                  variant="gold-glow"
-                  size="lg"
-                  onClick={() => setIsActive(!isActive)}
-                  className="px-8 font-semibold text-obsidian-950 gap-2"
-                >
-                  {isActive ? (
-                    <>
-                      <Pause className="w-5 h-5 fill-obsidian-950" />
-                      <span>Pause Focus</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-5 h-5 fill-obsidian-950" />
-                      <span>Begin Session</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Optional Session Notes */}
-              <div className="pt-4 border-t border-obsidian-750/70 text-left">
-                <label className="text-xs text-slate-400 block mb-1.5">
-                  Current Session Objective:
-                </label>
-                <input
-                  type="text"
-                  value={sessionNotes}
-                  onChange={(e) => setSessionNotes(e.target.value)}
-                  placeholder="e.g. Implement Dijkstra algorithm in TypeScript..."
-                  className="w-full bg-obsidian-900 border border-obsidian-750 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-gold-500/50 font-sans"
-                />
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Focus Stats & Discipline Architecture */}
-        <div className="lg:col-span-5 space-y-6">
-          <Card className="border-obsidian-700/80 bg-obsidian-850">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Flame className="w-4 h-4 text-gold-400" />
-                <span>Today's Focus Metrics</span>
-              </CardTitle>
-              <CardDescription>
-                Audited deep work hours for personal mastery.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between items-center p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-                <span className="text-xs text-slate-400">Total Focused Time:</span>
-                <span className="font-mono text-gold-300 font-bold text-sm">1h 40m</span>
-              </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-                <span className="text-xs text-slate-400">Distractions Logged:</span>
-                <span className="font-mono text-emerald-400 font-bold text-sm">0</span>
-              </div>
-              <div className="flex justify-between items-center p-3 rounded-lg bg-obsidian-900 border border-obsidian-750">
-                <span className="text-xs text-slate-400">Target Daily Threshold:</span>
-                <span className="font-mono text-slate-300 font-bold text-sm">2h 30m</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <button
+          type="button"
+          onClick={() => setActiveTab('preferences')}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            activeTab === 'preferences'
+              ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 shadow-gold-sm'
+              : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
+          }`}
+        >
+          <Settings2 className="w-3.5 h-3.5" />
+          <span>Preferences</span>
+        </button>
       </div>
+
+      {/* Tab 1: Focus Timer View */}
+      {activeTab === 'timer' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Timer Display */}
+          <div className="lg:col-span-7">
+            <FocusTimer
+              timerState={timerState}
+              remainingSeconds={remainingSecs}
+              elapsedSeconds={elapsedSecs}
+              progressPercent={progressPct}
+              linkedHabitTitle={
+                timerState.linkedHabitId ? habitTitleMap.get(timerState.linkedHabitId) : undefined
+              }
+              onStart={handleStartTimer}
+              onPause={handlePauseTimer}
+              onResume={handleResumeTimer}
+              onReset={handleResetTimer}
+              onComplete={handleCompleteSession}
+              onInterrupt={handleInterruptSession}
+              onSkipBreak={handleSkipBreak}
+              onCancel={handleCancelSession}
+            />
+          </div>
+
+          {/* Session Setup Controls (Disabled if currently running) */}
+          <div className="lg:col-span-5 space-y-5">
+            <div className="p-5 rounded-3xl bg-obsidian-850/80 border border-obsidian-750 space-y-5">
+              <div className="border-b border-obsidian-750 pb-3">
+                <h4 className="text-sm font-semibold text-slate-100 font-display">
+                  Session Configuration
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Customize duration, session type, and optional habit tracking.
+                </p>
+              </div>
+
+              {/* Mode Selector */}
+              <FocusModeSelector
+                mode={sessionMode}
+                onChangeMode={setSessionMode}
+                disabled={timerState.status !== 'idle'}
+              />
+
+              {/* Duration Selector */}
+              <DurationSelector
+                selectedMinutes={selectedDurationMins}
+                onChangeDuration={setSelectedDurationMins}
+                disabled={timerState.status !== 'idle'}
+              />
+
+              {/* Session Setup */}
+              <FocusSessionSetup
+                title={sessionTitle}
+                onChangeTitle={setSessionTitle}
+                linkedHabitId={linkedHabitId}
+                onChangeLinkedHabitId={setLinkedHabitId}
+                notes={sessionNotes}
+                onChangeNotes={setSessionNotes}
+                sessionMode={sessionMode}
+                pomodoroConfig={pomodoroConfig}
+                onChangePomodoroConfig={setPomodoroConfig}
+                disabled={timerState.status !== 'idle'}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: History View */}
+      {activeTab === 'history' && (
+        <FocusSessionHistory
+          sessions={allSessions || []}
+          habitTitleMap={habitTitleMap}
+          onDeleteSession={handleDeleteSession}
+        />
+      )}
+
+      {/* Tab 3: Analytics View */}
+      {activeTab === 'analytics' && (
+        <FocusAnalytics
+          sessions={allSessions || []}
+          habitTitleMap={habitTitleMap}
+        />
+      )}
+
+      {/* Tab 4: Preferences View */}
+      {activeTab === 'preferences' && (
+        <FocusPreferences
+          preferences={preferences}
+          onSavePreferences={handleSavePreferences}
+        />
+      )}
     </div>
   );
 }
+
+export default FocusView;

@@ -98,7 +98,7 @@ describe('FocusSessionService', () => {
       description: 'Minimum 1 problem',
       category: 'craft',
       type: 'completion',
-      schedule: { frequency: 'daily' },
+      schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
       startDate: '2026-11-01',
     });
 

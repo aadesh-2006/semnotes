@@ -9,23 +9,17 @@
  * - Clear empty states when no sessions match.
  */
 
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import type { FocusSessionRecord } from '../../core/focus/focusTypes';
 import { FocusTimerEngine } from '../../core/focus/focusTimerEngine';
 import { FocusSessionDetailModal } from './FocusSessionDetailModal';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
 import {
-  Clock,
   Search,
-  Filter,
   CheckCircle2,
   XCircle,
   AlertTriangle,
-  RotateCcw,
   Calendar,
   ChevronRight,
-  Flame,
   FileQuestion
 } from 'lucide-react';
 

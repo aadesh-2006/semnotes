@@ -6,11 +6,11 @@
  * and automatic phase transitions.
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Modal } from '../../components/ui/modal';
 import { Button } from '../../components/ui/button';
 import type { PomodoroConfig } from '../../core/focus/focusTypes';
-import { RotateCcw, Clock, Coffee, Sparkles } from 'lucide-react';
+import { Clock, Coffee, Sparkles } from 'lucide-react';
 
 interface PomodoroSettingsModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export function PomodoroSettingsModal({
       onClose={onClose}
       title="Pomodoro Cycle Configuration"
       description="Configure custom phase durations and cycle boundaries to match your rhythm."
-      size="md"
+      maxWidth="md"
     >
       <div className="space-y-5 pt-2">
         {/* Phase Durations Grid */}
@@ -162,7 +162,7 @@ export function PomodoroSettingsModal({
           <Button variant="ghost" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="gold" size="sm" onClick={handleSave}>
+          <Button variant="primary" size="sm" onClick={handleSave}>
             Save Configuration
           </Button>
         </div>
