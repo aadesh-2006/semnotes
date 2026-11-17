@@ -190,34 +190,15 @@ export const ClaimRewardInputSchema = z.object({
 export type ClaimRewardInput = z.infer<typeof ClaimRewardInputSchema>;
 
 // ==========================================
-// Journal & Urge Log (M5)
+// Journal, Reflection & Urge Logs (M6)
 // ==========================================
-export const UrgeLogSchema = z.object({
-  id: z.string().uuid(),
-  habitId: z.string().uuid(),
-  timestamp: z.string(),
-  intensity: z.number().min(1).max(10), // 1 to 10
-  trigger: z.string(),
-  context: z.string().optional(),
-  response: z.enum(['resisted', 'diverted', 'succumbed']),
-  tacticsUsed: z.array(z.string()).default([]),
-  notes: z.string().optional(),
-});
-export type UrgeLog = z.infer<typeof UrgeLogSchema>;
+export * from '../journal/journalTypes';
+export * from '../reflection/reflectionTypes';
+export * from '../urges/urgeTypes';
 
-export const JournalEntrySchema = z.object({
-  id: z.string().uuid(),
-  date: z.string(), // YYYY-MM-DD
-  mood: z.number().min(1).max(5), // 1 (lowest) to 5 (highest)
-  energyLevel: z.number().min(1).max(5).default(3),
-  title: z.string().optional(),
-  content: z.string(),
-  promptsAnswered: z.record(z.string()).optional(),
-  tags: z.array(z.string()).default([]),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-});
-export type JournalEntry = z.infer<typeof JournalEntrySchema>;
+// Legacy type alias for UrgeLog compatibility with Dexie v1
+export type UrgeLog = import('../urges/urgeTypes').UrgeLogRecord;
+
 
 // ==========================================
 // Focus Sessions (Module 8)
