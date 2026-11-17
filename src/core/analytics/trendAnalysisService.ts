@@ -33,10 +33,24 @@ export class TrendAnalysisService {
       evaluationDate
     );
 
+    // Initialize running sliding 30-day window over the prior 29 days
+    const priorEndDate = shiftCalendarDate(startDate, -1);
+    const initialPriorDates = getDateSequence(bufferStartDate, priorEndDate);
+    let r30Completed = 0;
+    let r30Evaluated = 0;
+    for (const pd of initialPriorDates) {
+      const ps = summaries.get(pd);
+      if (ps) {
+        r30Completed += ps.completedCount;
+        r30Evaluated += ps.completedCount + ps.failedCount + ps.missedCount;
+      }
+    }
+
     const dates = getDateSequence(startDate, endDate);
     const points: DailyAdherencePoint[] = [];
 
-    for (const d of dates) {
+    for (let i = 0; i < dates.length; i++) {
+      const d = dates[i];
       const summary = summaries.get(d);
       const completed = summary ? summary.completedCount : 0;
       const failed = summary ? summary.failedCount : 0;
@@ -44,19 +58,9 @@ export class TrendAnalysisService {
       const evaluated = completed + failed + missed;
       const completionPercentage = evaluated > 0 ? Math.round((completed / evaluated) * 100) : null;
 
-      // Rolling 30-day score ending on date d
-      const r30Start = shiftCalendarDate(d, -29);
-      let r30Completed = 0;
-      let r30Evaluated = 0;
-
-      const rDates = getDateSequence(r30Start, d);
-      for (const rd of rDates) {
-        const rSummary = summaries.get(rd);
-        if (rSummary) {
-          r30Completed += rSummary.completedCount;
-          r30Evaluated += rSummary.completedCount + rSummary.failedCount + rSummary.missedCount;
-        }
-      }
+      // Add current day into rolling 30-day window
+      r30Completed += completed;
+      r30Evaluated += evaluated;
 
       const rolling30Score =
         r30Evaluated > 0 ? Math.round((r30Completed / r30Evaluated) * 100) : null;
@@ -71,6 +75,14 @@ export class TrendAnalysisService {
         evaluatedCount: evaluated,
         rolling30Score
       });
+
+      // Remove the day that drops out of the 30-day window for the next step
+      const droppingDate = shiftCalendarDate(d, -29);
+      const dropSummary = summaries.get(droppingDate);
+      if (dropSummary) {
+        r30Completed -= dropSummary.completedCount;
+        r30Evaluated -= dropSummary.completedCount + dropSummary.failedCount + dropSummary.missedCount;
+      }
     }
 
     return points;

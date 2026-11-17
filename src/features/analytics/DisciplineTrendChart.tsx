@@ -188,6 +188,7 @@ export const DisciplineTrendChart: React.FC<DisciplineTrendChartProps> = ({
                   fill="url(#goldGradient)"
                   connectNulls
                   name="Adherence %"
+                  animationDuration={300}
                 />
                 {granularity === 'daily' && (
                   <Line
@@ -199,6 +200,7 @@ export const DisciplineTrendChart: React.FC<DisciplineTrendChartProps> = ({
                     strokeDasharray="4 4"
                     connectNulls
                     name="Rolling 30d Score"
+                    animationDuration={300}
                   />
                 )}
               </AreaChart>

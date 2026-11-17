@@ -94,8 +94,8 @@ export const CompletedVsMissedChart: React.FC<CompletedVsMissedChartProps> = ({ 
                   wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
                   iconSize={8}
                 />
-                <Bar dataKey="Completed" fill="#d4af37" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="Friction" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                <Bar dataKey="Completed" fill="#d4af37" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={300} />
+                <Bar dataKey="Friction" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={300} />
               </BarChart>
             </ResponsiveContainer>
           </div>
