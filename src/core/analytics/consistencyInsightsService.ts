@@ -65,8 +65,8 @@ export class ConsistencyInsightsService {
         insights.push({
           id: 'weakest-day',
           type: 'weakest_day',
-          title: `Highest Resistance Day: ${weakest.dayName}`,
-          description: `Your ${weakest.dayName} commitments averaged ${weakest.rate}% adherence across ${weakest.evaluated} evaluated commitments. Consider fortifying weekend/evening routines.`,
+          title: `Lowest Adherence Day: ${weakest.dayName}`,
+          description: `Your ${weakest.dayName} commitments averaged ${weakest.rate}% adherence across ${weakest.evaluated} evaluated commitments. Identifies the weekday with the lowest historical fulfillment rate.`,
           metricValue: `${weakest.rate}%`,
           sampleSize: weakest.evaluated,
           isPositive: false
@@ -84,7 +84,7 @@ export class ConsistencyInsightsService {
       insights.push({
         id: 'top-habit',
         type: 'top_habit',
-        title: `Anchor Habit: ${topHabit.habitTitle}`,
+        title: `Most Consistent Habit: ${topHabit.habitTitle}`,
         description: `Leading all commitments with ${topHabit.completionPercentage}% consistency over ${topHabit.evaluatedCount} evaluated days (${topHabit.currentStreak}d current streak).`,
         metricValue: `${topHabit.completionPercentage}%`,
         sampleSize: topHabit.evaluatedCount,
@@ -118,7 +118,7 @@ export class ConsistencyInsightsService {
           id: 'declining-habit',
           type: 'declining_habit',
           title: `Needs Attention: ${mostDeclining.habitTitle}`,
-          description: `Adherence declined by ${mostDeclining.percentageDelta}% compared to preceding period. Review friction or schedule load.`,
+          description: `Adherence declined by ${mostDeclining.percentageDelta}% compared to the preceding period. Review schedule balance or routine consistency.`,
           metricValue: `${mostDeclining.percentageDelta}%`,
           sampleSize: mostDeclining.evaluatedCount,
           isPositive: false

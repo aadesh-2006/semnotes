@@ -24,35 +24,35 @@ export const CompletedVsMissedChart: React.FC<CompletedVsMissedChartProps> = ({ 
       return dailyPoints.map((p) => ({
         label: p.displayDate,
         Completed: p.completedCount,
-        Friction: p.failedCount + p.missedCount
+        Missed: p.failedCount + p.missedCount
       }));
     }
 
     // Chunk into 7-day groups
-    const chunks: { label: string; Completed: number; Friction: number }[] = [];
+    const chunks: { label: string; Completed: number; Missed: number }[] = [];
     const chunkSize = Math.ceil(dailyPoints.length / 8);
 
     for (let i = 0; i < dailyPoints.length; i += chunkSize) {
       const slice = dailyPoints.slice(i, i + chunkSize);
       let comp = 0;
-      let frict = 0;
+      let missed = 0;
       for (const p of slice) {
         comp += p.completedCount;
-        frict += p.failedCount + p.missedCount;
+        missed += p.failedCount + p.missedCount;
       }
       const startLbl = slice[0].displayDate;
       const endLbl = slice[slice.length - 1].displayDate;
       chunks.push({
         label: startLbl === endLbl ? startLbl : `${startLbl}-${endLbl}`,
         Completed: comp,
-        Friction: frict
+        Missed: missed
       });
     }
 
     return chunks;
   }, [dailyPoints]);
 
-  const hasData = data.some((d) => d.Completed > 0 || d.Friction > 0);
+  const hasData = data.some((d) => d.Completed > 0 || d.Missed > 0);
 
   return (
     <Card className="border-obsidian-750 bg-obsidian-850 shadow-md">
@@ -60,12 +60,12 @@ export const CompletedVsMissedChart: React.FC<CompletedVsMissedChartProps> = ({ 
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2 text-slate-100">
             <BarChart3 className="w-4 h-4 text-gold-400" />
-            <span>Fulfillment vs Friction Volume</span>
+            <span>Completed vs Missed Commitments</span>
           </CardTitle>
           <span className="text-[10px] text-slate-400 font-mono">Commitment Volume</span>
         </div>
         <CardDescription className="text-xs text-slate-400">
-          Raw count of fulfilled commitments vs failed/missed friction events.
+          Comparison of fulfilled commitments versus missed scheduled days.
         </CardDescription>
       </CardHeader>
 
@@ -95,7 +95,7 @@ export const CompletedVsMissedChart: React.FC<CompletedVsMissedChartProps> = ({ 
                   iconSize={8}
                 />
                 <Bar dataKey="Completed" fill="#d4af37" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={300} />
-                <Bar dataKey="Friction" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={300} />
+                <Bar dataKey="Missed" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} animationDuration={300} />
               </BarChart>
             </ResponsiveContainer>
           </div>

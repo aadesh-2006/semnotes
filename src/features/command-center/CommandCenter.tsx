@@ -345,7 +345,7 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           label="Pending Today"
           value={pendingTodayCount}
           unit="commitments"
-          subtext={failedTodayCount > 0 ? `${failedTodayCount} setbacks logged` : 'Zero setbacks logged today'}
+          subtext={failedTodayCount > 0 ? `${failedTodayCount} missed or unfulfilled` : 'All scheduled commitments on track'}
           icon={<Clock className="w-5 h-5 text-slate-400" />}
         />
       </div>

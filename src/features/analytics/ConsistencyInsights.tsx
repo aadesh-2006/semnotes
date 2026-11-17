@@ -34,7 +34,7 @@ export const ConsistencyInsights: React.FC<ConsistencyInsightsProps> = ({ insigh
             <span>Consistency Insights & Patterns</span>
           </CardTitle>
           <span className="text-[10px] text-slate-400 font-mono">
-            Empirical Adherence Auditing
+            Consistency Analysis
           </span>
         </div>
         <CardDescription className="text-xs text-slate-400">
