@@ -56,7 +56,7 @@ export class SemnotesDatabase extends Dexie {
     });
 
     this.version(5).stores({
-      focusSessions: 'id, habitId, startedAt, status, sessionMode, date, createdAt'
+      focusSessions: 'id, habitId, linkedHabitId, startedAt, status, sessionMode, date, createdAt'
     });
   }
 }
