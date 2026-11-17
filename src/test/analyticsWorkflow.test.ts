@@ -189,7 +189,7 @@ describe('Milestone 7: Discipline Analytics Subsystem Workflow', () => {
       expect(scoreAfter.score).toBeGreaterThan(scoreBefore.score!);
     });
 
-    it('generates sample-size bounded consistency insights and setback recovery metrics', async () => {
+    it('generates sample-size bounded consistency insights', async () => {
       const evaluationDate = '2026-11-17';
       const habit = await HabitService.createHabit({
         title: 'DSA Practice',
@@ -200,11 +200,11 @@ describe('Milestone 7: Discipline Analytics Subsystem Workflow', () => {
         startDate: '2026-10-19'
       });
 
-      // Complete 20 days with 2 scattered setbacks, each recovered the next day
+      // Complete 20 days with 2 missed/failed days
       for (let i = 0; i < 20; i++) {
         const d = shiftCalendarDate('2026-10-19', i);
         if (i === 5 || i === 12) {
-          await HabitLogService.recordCheckIn(habit, d, { status: 'failed', notes: 'Friction point' });
+          await HabitLogService.recordCheckIn(habit, d, { status: 'failed', notes: 'Missed schedule' });
         } else {
           await HabitLogService.recordCheckIn(habit, d, { status: 'completed' });
         }
@@ -236,12 +236,9 @@ describe('Milestone 7: Discipline Analytics Subsystem Workflow', () => {
 
       const insights = ConsistencyInsightsService.generateInsights(dailySeries, habitMetrics);
       expect(Array.isArray(insights)).toBe(true);
-
-      const recovery = ConsistencyInsightsService.calculateSetbackRecovery(dailySeries, habitMetrics);
-      expect(recovery.totalSetbacks).toBeGreaterThanOrEqual(2);
-      expect(recovery.nextDayRecoveryRate).not.toBeNull();
-      // Since days 6 and 13 were completed immediately after setbacks on 5 and 12, recovery rate should be positive
-      expect(recovery.nextDayRecoveryRate!).toBeGreaterThan(0);
+      expect(insights.length).toBeGreaterThanOrEqual(1);
+      const topHabitInsight = insights.find((i) => i.type === 'top_habit');
+      expect(topHabitInsight).toBeDefined();
     });
   });
 });

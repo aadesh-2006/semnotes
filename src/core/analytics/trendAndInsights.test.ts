@@ -135,26 +135,5 @@ describe('TrendAnalysisService & ConsistencyInsightsService', () => {
       expect(declining).toBeDefined();
       expect(declining?.metricValue).toBe('-17%');
     });
-
-    it('calculates setback recovery rate on the day immediately following a failure', () => {
-      const dailyPoints: DailyAdherencePoint[] = [
-        // Day 1: Fail
-        { date: '2026-11-10', displayDate: 'Nov 10', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: null },
-        // Day 2: Recovered (completed)
-        { date: '2026-11-11', displayDate: 'Nov 11', completedCount: 1, failedCount: 0, missedCount: 0, evaluatedCount: 1, completionPercentage: 100, rolling30Score: null },
-        // Day 3: Maintained
-        { date: '2026-11-12', displayDate: 'Nov 12', completedCount: 1, failedCount: 0, missedCount: 0, evaluatedCount: 1, completionPercentage: 100, rolling30Score: null },
-        // Day 4: Fail
-        { date: '2026-11-13', displayDate: 'Nov 13', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: null },
-        // Day 5: Failed again
-        { date: '2026-11-14', displayDate: 'Nov 14', completedCount: 0, failedCount: 1, missedCount: 0, evaluatedCount: 1, completionPercentage: 0, rolling30Score: null }
-      ];
-
-      const recovery = ConsistencyInsightsService.calculateSetbackRecovery(dailyPoints, []);
-      // 2 setback days (Nov 10, Nov 13). Nov 10 was recovered on Nov 11 (1 recovered out of 2 = 50%)
-      expect(recovery.totalSetbacks).toBe(3); // 1 + 1 + 1 failures
-      expect(recovery.recoveredNextDayCount).toBe(1);
-      expect(recovery.nextDayRecoveryRate).toBe(50);
-    });
   });
 });

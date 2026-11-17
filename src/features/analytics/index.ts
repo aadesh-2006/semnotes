@@ -4,6 +4,5 @@ export * from './DisciplineTrendChart';
 export * from './HabitPerformancePanel';
 export * from './CategoryPerformancePanel';
 export * from './ConsistencyInsights';
-export * from './RecoveryAnalytics';
 export * from './CompletedVsMissedChart';
 export * from './AnalyticsFilters';

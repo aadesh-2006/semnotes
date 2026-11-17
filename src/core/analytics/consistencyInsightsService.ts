@@ -2,8 +2,7 @@ import { parseCalendarDate } from '../utils';
 import type {
   DailyAdherencePoint,
   HabitPerformanceMetric,
-  ConsistencyInsight,
-  SetbackRecoveryMetric
+  ConsistencyInsight
 } from './analyticsTypes';
 
 export class ConsistencyInsightsService {
@@ -128,54 +127,5 @@ export class ConsistencyInsightsService {
     }
 
     return insights;
-  }
-
-  /**
-   * Analyzes recovery behavior on the day immediately following a setback or missed commitment.
-   */
-  static calculateSetbackRecovery(
-    dailyPoints: DailyAdherencePoint[],
-    habitMetrics: HabitPerformanceMetric[]
-  ): SetbackRecoveryMetric {
-    let totalSetbacks = 0;
-    let setbackDaysWithFollowup = 0;
-    let recoveredNextDayCount = 0;
-
-    for (let i = 0; i < dailyPoints.length; i++) {
-      const current = dailyPoints[i];
-      const hasSetback = current.failedCount > 0 || current.missedCount > 0;
-      if (hasSetback) {
-        totalSetbacks += current.failedCount + current.missedCount;
-
-        if (i < dailyPoints.length - 1) {
-          setbackDaysWithFollowup++;
-          const next = dailyPoints[i + 1];
-          if (next.evaluatedCount > 0 && next.failedCount === 0 && next.missedCount === 0) {
-            recoveredNextDayCount++;
-          }
-        }
-      }
-    }
-
-    const nextDayRecoveryRate =
-      setbackDaysWithFollowup > 0
-        ? Math.round((recoveredNextDayCount / setbackDaysWithFollowup) * 100)
-        : null;
-
-    const habitsWithRecurringMisses = habitMetrics
-      .filter((h) => h.missedCount + h.failedCount > 0)
-      .map((h) => ({
-        habitId: h.habitId,
-        habitTitle: h.habitTitle,
-        missCount: h.missedCount + h.failedCount
-      }))
-      .sort((a, b) => b.missCount - a.missCount);
-
-    return {
-      totalSetbacks,
-      recoveredNextDayCount,
-      nextDayRecoveryRate,
-      habitsWithRecurringMisses
-    };
   }
 }

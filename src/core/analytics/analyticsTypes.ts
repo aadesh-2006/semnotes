@@ -123,7 +123,6 @@ export interface ConsistencyInsight {
     | 'top_habit'
     | 'improving_habit'
     | 'declining_habit'
-    | 'setback_recovery'
     | 'general';
   title: string;
   description: string;
@@ -133,22 +132,7 @@ export interface ConsistencyInsight {
 }
 
 // ==========================================
-// 6. Setback & Recovery Metrics
-// ==========================================
-
-export interface SetbackRecoveryMetric {
-  totalSetbacks: number; // failed + missed
-  recoveredNextDayCount: number;
-  nextDayRecoveryRate: number | null; // percentage
-  habitsWithRecurringMisses: {
-    habitId: string;
-    habitTitle: string;
-    missCount: number;
-  }[];
-}
-
-// ==========================================
-// 7. Analytics Filter Configuration
+// 6. Analytics Filter Configuration
 // ==========================================
 
 export type AnalyticsTimePreset = '7d' | '30d' | '90d' | '6m' | '12m' | 'custom';

@@ -18,7 +18,6 @@ import { CompletedVsMissedChart } from './CompletedVsMissedChart';
 import { HabitPerformancePanel } from './HabitPerformancePanel';
 import { CategoryPerformancePanel } from './CategoryPerformancePanel';
 import { ConsistencyInsights } from './ConsistencyInsights';
-import { RecoveryAnalytics } from './RecoveryAnalytics';
 import { AnalyticsFilters } from './AnalyticsFilters';
 import { Badge } from '../../components/ui/badge';
 import { Activity, Shield } from 'lucide-react';
@@ -181,14 +180,6 @@ export const AnalyticsView: React.FC = () => {
     return ConsistencyInsightsService.generateInsights(dailyTrendSeries, habitPerformances);
   }, [dailyTrendSeries, habitPerformances]);
 
-  // Setback Recovery Analytics
-  const recoveryMetric = useMemo(() => {
-    return ConsistencyInsightsService.calculateSetbackRecovery(
-      dailyTrendSeries,
-      habitPerformances
-    );
-  }, [dailyTrendSeries, habitPerformances]);
-
   const isLoading = habits === undefined || logs === undefined || audits === undefined;
 
   if (isLoading) {
@@ -255,11 +246,8 @@ export const AnalyticsView: React.FC = () => {
         <CategoryPerformancePanel categoryMetrics={categoryPerformances} />
       </div>
 
-      {/* Consistency Patterns & Setback Recovery */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ConsistencyInsights insights={insights} />
-        <RecoveryAnalytics recoveryMetric={recoveryMetric} />
-      </div>
+      {/* Consistency Patterns & Insights */}
+      <ConsistencyInsights insights={insights} />
 
       {/* Methodology & Privacy Notice */}
       <div className="p-4 rounded-xl bg-obsidian-900/40 border border-obsidian-800 flex items-start gap-3 text-xs text-slate-400">
@@ -269,9 +257,7 @@ export const AnalyticsView: React.FC = () => {
             Algorithmic Integrity & Local Data Sovereignty
           </p>
           <p>
-            SEMNÓTĒS calculations run purely in your local browser sandbox via Dexie IndexedDB.
-            Discipline scores evaluate scheduled commitments only; rest days, paused periods, and future dates are strictly excluded from the denominator.
-            Private journal reflections and urge descriptions are never analyzed or aggregated.
+            All analytics calculations run locally in your browser. Private journal entries and personal reflections are never included in analytics calculations.
           </p>
         </div>
       </div>
