@@ -45,7 +45,7 @@ export const ConsistencyInsights: React.FC<ConsistencyInsightsProps> = ({ insigh
       <CardContent className="pt-4 space-y-3">
         {insights.length === 0 ? (
           <div className="py-8 text-center text-xs text-slate-400">
-            Awaiting additional verified commitment history (&ge; 5 evaluations per category) to derive patterns.
+            Awaiting additional verified commitment history (&ge; 5 evaluations per weekday or habit) to identify consistency patterns.
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
