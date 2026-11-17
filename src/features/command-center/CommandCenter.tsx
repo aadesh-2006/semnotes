@@ -10,6 +10,9 @@ import { DisciplineScoreEngine } from '../../core/analytics/disciplineScoreEngin
 import { isScheduledDay } from '../../core/services/scheduleService';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { getDailyPrompts } from '../../core/reflection/reflectionPromptEngine';
+import { FocusPersistenceService } from '../../core/focus/focusPersistenceService';
+import { FocusAnalyticsService } from '../../core/focus/focusAnalyticsService';
+import { FocusTimerEngine } from '../../core/focus/focusTimerEngine';
 import { MetricCard } from '../../components/ui/metric-card';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -31,7 +34,9 @@ import {
   Trophy,
   Sun,
   Moon,
-  Activity
+  Activity,
+  Timer,
+  Play
 } from 'lucide-react';
 
 interface CommandCenterProps {
@@ -50,6 +55,13 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
   const allAchievements = useLiveQuery(() => db.achievements.toArray(), []);
   const morningIntention = useLiveQuery(() => db.morningIntentions.where('date').equals(todayStr).first(), [todayStr]);
   const eveningDebrief = useLiveQuery(() => db.eveningDebriefs.where('date').equals(todayStr).first(), [todayStr]);
+  const allFocusSessions = useLiveQuery(() => db.focusSessions.toArray(), []);
+
+  // Active focus timer from persistence
+  const activeFocusTimer = useMemo(() => FocusPersistenceService.loadActiveTimer(), []);
+  const todayFocusStats = useMemo(() => {
+    return FocusAnalyticsService.calculateTodayStats(allFocusSessions || [], todayStr);
+  }, [allFocusSessions, todayStr]);
 
   // Check-in modal state
   const [checkInHabit, setCheckInHabit] = useState<Habit | null>(null);
@@ -665,6 +677,78 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
               </CardContent>
             </Card>
           )}
+
+          {/* Focus Mode & Deep Work Section */}
+          <Card className="border-gold-600/30 bg-gradient-to-br from-obsidian-850 to-obsidian-900 shadow-md">
+            <CardHeader className="pb-3 border-b border-obsidian-750/70">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base flex items-center gap-2 text-gold-300">
+                  <Timer className="w-4 h-4 text-gold-400" />
+                  <span>Focus & Deep Work</span>
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onNavigate('focus')}
+                  className="text-xs text-gold-400 hover:text-gold-300 gap-1"
+                >
+                  <span>Focus Mode</span>
+                  <ArrowRight className="w-3 h-3" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-3">
+              {activeFocusTimer && (activeFocusTimer.status === 'running' || activeFocusTimer.status === 'paused') ? (
+                <div className="p-3.5 rounded-2xl bg-obsidian-800/90 border border-gold-500/50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-100 truncate max-w-[200px]">
+                      {activeFocusTimer.title}
+                    </span>
+                    <Badge variant={activeFocusTimer.status === 'running' ? 'success' : 'warning'} size="sm" className="font-mono">
+                      {activeFocusTimer.status === 'running' ? 'Active' : 'Paused'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between font-mono text-xs">
+                    <span className="text-slate-400">Time Remaining:</span>
+                    <span className="text-gold-300 font-bold text-sm">
+                      {FocusTimerEngine.formatDigitalClock(
+                        FocusTimerEngine.calculateRemainingSeconds(activeFocusTimer)
+                      )}
+                    </span>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => onNavigate('focus')}
+                    className="w-full text-xs gap-1.5 shadow-gold-sm"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Return to Active Session</span>
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-obsidian-800/70 border border-obsidian-750">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-gold-300 block">
+                      {todayFocusStats.focusedMinutesToday}m Focused Today
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      {todayFocusStats.completedSessionsToday} completed session{todayFocusStats.completedSessionsToday === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => onNavigate('focus')}
+                    className="text-xs gap-1 shadow-gold-sm"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Start Focus</span>
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Daily Reflection & Sovereign Debrief Card */}
           <Card className="border-gold-600/30 bg-gradient-to-br from-obsidian-850 to-obsidian-900 shadow-md">
