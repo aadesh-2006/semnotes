@@ -136,16 +136,58 @@ export type StreakRecord = z.infer<typeof StreakRecordSchema>;
 export const MilestoneSchema = z.object({
   id: z.string().uuid(),
   habitId: z.string().uuid(),
-  thresholdDays: z.number().positive(),
-  rewardTitle: z.string().min(1, 'Reward title required'),
-  rewardDescription: z.string().default(''),
-  isUnlocked: z.boolean().default(false),
-  unlockedAt: z.string().optional(),
-  isClaimed: z.boolean().default(false),
-  claimedAt: z.string().optional(),
+  thresholdDays: z.number().int().positive('Threshold must be a positive whole number of days'),
+  rewardTitle: z.string().min(1, 'Reward title is required'),
+  rewardDescription: z.string().default('').optional(),
+  personalNote: z.string().optional(),
+  rewardCategory: z.string().optional(),
+  isEnabled: z.boolean().default(true),
+  sortOrder: z.number().default(0),
   createdAt: z.string(),
+  updatedAt: z.string(),
 });
 export type Milestone = z.infer<typeof MilestoneSchema>;
+
+export const CreateMilestoneInputSchema = MilestoneSchema.omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  sortOrder: true,
+}).extend({
+  isEnabled: z.boolean().default(true).optional(),
+  sortOrder: z.number().optional(),
+});
+export type CreateMilestoneInput = z.infer<typeof CreateMilestoneInputSchema>;
+
+export const UpdateMilestoneInputSchema = CreateMilestoneInputSchema.partial();
+export type UpdateMilestoneInput = z.infer<typeof UpdateMilestoneInputSchema>;
+
+// Achievement Schema (Immutable snapshot of earned milestone within a streak instance)
+export const AchievementSchema = z.object({
+  id: z.string().uuid(),
+  habitId: z.string().uuid(),
+  milestoneId: z.string().uuid(),
+  thresholdDays: z.number().int().positive(),
+  streakStartDate: z.string(), // YYYY-MM-DD
+  achievedDate: z.string(),    // YYYY-MM-DD
+  achievedStreakLength: z.number().int().positive(),
+  rewardTitle: z.string(),       // Immutable snapshot of title
+  rewardDescription: z.string(), // Immutable snapshot
+  rewardCategory: z.string().optional(),
+  personalNote: z.string().optional(),
+  isClaimed: z.boolean().default(false),
+  claimedAt: z.string().optional(), // ISO8601
+  claimNotes: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Achievement = z.infer<typeof AchievementSchema>;
+
+export const ClaimRewardInputSchema = z.object({
+  claimNotes: z.string().optional(),
+  claimedAt: z.string().optional(), // Defaults to now
+});
+export type ClaimRewardInput = z.infer<typeof ClaimRewardInputSchema>;
 
 // ==========================================
 // Journal & Urge Log (M5)

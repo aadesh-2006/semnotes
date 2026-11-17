@@ -1,14 +1,19 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
-import { type Habit, type HabitLog } from '../../core/domain/types';
+import { type Habit, type HabitLog, type Milestone, type Achievement } from '../../core/domain/types';
 import { formatScheduleSummary } from '../../core/services/scheduleService';
 import { StreakCalculator } from '../../core/streak/streakCalculator';
 import { StreakEngine } from '../../core/streak/streakEngine';
+import { MilestoneService } from '../../core/milestones/milestoneService';
+import { AchievementEngine } from '../../core/milestones/achievementEngine';
 import { formatCalendarDate, formatFriendlyDate } from '../../core/utils';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import { Progress } from '../../components/ui/progress';
+import { MilestoneFormModal } from '../../components/modals/MilestoneFormModal';
+import { ClaimRewardModal } from '../../components/modals/ClaimRewardModal';
 import {
   ArrowLeft,
   Calendar,
@@ -22,7 +27,10 @@ import {
   Clock,
   Flame,
   Trophy,
-  Activity
+  Activity,
+  Gift,
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 
 interface HabitDetailViewProps {
@@ -44,6 +52,11 @@ export function HabitDetailView({
 }: HabitDetailViewProps) {
   const todayStr = formatCalendarDate(new Date());
 
+  const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
+  const [editingMilestone, setEditingMilestone] = useState<Milestone | null>(null);
+  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [claimingAchievement, setClaimingAchievement] = useState<Achievement | null>(null);
+
   const habit = useLiveQuery(() => db.habits.get(habitId), [habitId]);
   const logs = useLiveQuery(
     () => db.habitLogs.where('habitId').equals(habitId).reverse().sortBy('date'),
@@ -53,6 +66,21 @@ export function HabitDetailView({
     () => db.auditRecords.where('habitId').equals(habitId).reverse().sortBy('timestamp'),
     [habitId]
   );
+  const milestones = useLiveQuery(
+    () => db.milestones.where('habitId').equals(habitId).sortBy('thresholdDays'),
+    [habitId]
+  );
+  const achievements = useLiveQuery(
+    () => db.achievements.where('habitId').equals(habitId).toArray(),
+    [habitId]
+  );
+
+  // Automatically evaluate achievements when logs change
+  useEffect(() => {
+    if (habitId) {
+      AchievementEngine.evaluateAndRecordAchievements(habitId).catch(() => {});
+    }
+  }, [habitId, logs?.length]);
 
   // Compute full deterministic streak metrics
   const streak = useMemo(() => {
@@ -273,6 +301,184 @@ export function HabitDetailView({
         </CardContent>
       </Card>
 
+      {/* Milestone & Custom Rewards Section */}
+      <Card className="border-obsidian-750 bg-obsidian-850">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Gift className="w-4 h-4 text-gold-400" />
+              <span>Streak Milestones & Celebratory Rewards</span>
+            </CardTitle>
+            <CardDescription>
+              Custom thresholds and rewards tied strictly to this habit streak.
+            </CardDescription>
+          </div>
+
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setEditingMilestone(null);
+              setIsMilestoneModalOpen(true);
+            }}
+            className="text-xs gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Add Milestone</span>
+          </Button>
+        </CardHeader>
+
+        <CardContent>
+          {!milestones || milestones.length === 0 ? (
+            <div className="p-6 text-center text-slate-400 border border-dashed border-obsidian-750 rounded-xl">
+              <Trophy className="w-8 h-8 mx-auto text-slate-500 mb-2 opacity-60" />
+              <p className="text-sm font-medium text-slate-300">No milestones configured for this habit</p>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                Set positive integer day milestones (e.g. 7, 14, 30 days) and attach personal treats or honors to reward your dedication.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setEditingMilestone(null);
+                  setIsMilestoneModalOpen(true);
+                }}
+                className="mt-3 text-xs"
+              >
+                + Define First Milestone
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {milestones.map((m) => {
+                const currentStreak = streak?.currentStreak || 0;
+                const isReached = currentStreak >= m.thresholdDays;
+                const daysRemaining = Math.max(0, m.thresholdDays - currentStreak);
+                const progressPct = Math.min(100, Math.round((currentStreak / m.thresholdDays) * 100));
+
+                // Find matching achievement
+                const currentAchievement = achievements?.find(
+                  (a) => a.milestoneId === m.id && a.streakStartDate === streak?.currentStreakStartDate
+                );
+                const anyAchievement = achievements
+                  ?.filter((a) => a.milestoneId === m.id)
+                  .sort((a, b) => b.achievedDate.localeCompare(a.achievedDate))[0];
+
+                const ach = currentAchievement || anyAchievement;
+                const isClaimed = Boolean(ach?.isClaimed);
+                const isUnlocked = Boolean(ach || isReached);
+
+                return (
+                  <div
+                    key={m.id}
+                    className={`p-3.5 rounded-xl border transition-all ${
+                      isUnlocked && !isClaimed
+                        ? 'bg-gradient-to-br from-obsidian-800 to-obsidian-850 border-gold-500/60 shadow-gold-sm'
+                        : isClaimed
+                        ? 'bg-obsidian-900 border-emerald-900/40'
+                        : 'bg-obsidian-900 border-obsidian-750'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-1.5">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={isClaimed ? 'success' : isUnlocked ? 'gold' : 'neutral'} size="sm" className="font-mono">
+                          {m.thresholdDays} Days
+                        </Badge>
+                        {m.rewardCategory && (
+                          <span className="text-[10px] text-slate-400 font-medium">
+                            {m.rewardCategory}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingMilestone(m);
+                            setIsMilestoneModalOpen(true);
+                          }}
+                          className="h-6 w-6 text-slate-400 hover:text-slate-200"
+                          title="Edit Milestone"
+                        >
+                          <Edit className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={async () => {
+                            if (confirm('Delete this milestone definition? Historical achievements will remain preserved.')) {
+                              await MilestoneService.deleteMilestone(m.id);
+                            }
+                          }}
+                          className="h-6 w-6 text-slate-400 hover:text-red-400"
+                          title="Delete Milestone"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <h4 className="text-sm font-semibold text-slate-100 font-serif">
+                      {m.rewardTitle}
+                    </h4>
+
+                    {m.rewardDescription && (
+                      <p className="text-xs text-slate-400 mt-0.5 line-clamp-2">
+                        {m.rewardDescription}
+                      </p>
+                    )}
+
+                    {/* Progress & Claim Status */}
+                    <div className="mt-3 pt-2.5 border-t border-obsidian-750/70 space-y-2">
+                      <div className="flex items-center justify-between text-xs font-mono">
+                        <span className="text-slate-400">
+                          Progress: <span className="text-gold-300 font-bold">{currentStreak}</span> / {m.thresholdDays}d
+                        </span>
+                        <span className="text-slate-300 font-semibold">{progressPct}%</span>
+                      </div>
+                      <Progress value={progressPct} />
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {isClaimed ? (
+                            <span className="text-emerald-400 flex items-center gap-1">
+                              <CheckCircle2 className="w-3.5 h-3.5" /> Claimed on {ach?.claimedAt?.split('T')[0]}
+                            </span>
+                          ) : isUnlocked ? (
+                            <span className="text-gold-400 flex items-center gap-1 font-semibold">
+                              <Sparkles className="w-3.5 h-3.5" /> Unlocked & Ready!
+                            </span>
+                          ) : (
+                            `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining`
+                          )}
+                        </span>
+
+                        {isUnlocked && !isClaimed && ach && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => {
+                              setClaimingAchievement(ach);
+                              setIsClaimModalOpen(true);
+                            }}
+                            className="h-7 text-xs px-2.5"
+                          >
+                            <Trophy className="w-3 h-3 mr-1 text-obsidian-950" />
+                            Claim
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Detailed Timeline Table */}
       <Card className="border-obsidian-750 bg-obsidian-850">
         <CardHeader className="flex flex-row items-center justify-between">
@@ -417,6 +623,24 @@ export function HabitDetailView({
           )}
         </CardContent>
       </Card>
+
+      {/* Modals */}
+      <MilestoneFormModal
+        isOpen={isMilestoneModalOpen}
+        onClose={() => setIsMilestoneModalOpen(false)}
+        habitId={habit.id}
+        habitName={habit.title}
+        existingMilestone={editingMilestone}
+        onSuccess={() => {}}
+      />
+
+      <ClaimRewardModal
+        isOpen={isClaimModalOpen}
+        onClose={() => setIsClaimModalOpen(false)}
+        achievement={claimingAchievement}
+        habitName={habit.title}
+        onSuccess={() => {}}
+      />
     </div>
   );
 }

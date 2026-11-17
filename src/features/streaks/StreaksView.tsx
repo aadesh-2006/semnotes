@@ -192,14 +192,42 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
   // If a habit detail view is active, render it
   if (selectedHabitId) {
     return (
-      <HabitDetailView
-        habitId={selectedHabitId}
-        onBack={() => setSelectedHabitId(null)}
-        onEdit={handleOpenEdit}
-        onCheckIn={handleCheckIn}
-        onPauseToggle={handlePauseToggle}
-        onArchiveToggle={handleArchiveToggle}
-      />
+      <>
+        <HabitDetailView
+          habitId={selectedHabitId}
+          onBack={() => setSelectedHabitId(null)}
+          onEdit={handleOpenEdit}
+          onCheckIn={handleCheckIn}
+          onPauseToggle={handlePauseToggle}
+          onArchiveToggle={handleArchiveToggle}
+        />
+
+        <HabitFormModal
+          isOpen={isFormModalOpen}
+          onClose={() => setIsFormModalOpen(false)}
+          habitToEdit={habitToEdit}
+          onSuccess={() => {}}
+        />
+
+        <CheckInModal
+          isOpen={isCheckInOpen}
+          onClose={() => setIsCheckInOpen(false)}
+          habit={checkInHabit}
+          targetDate={checkInTargetDate}
+          existingLog={existingLogForCheckIn}
+          onSuccess={() => {}}
+        />
+
+        <ConfirmationDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+          onConfirm={confirmDialog.onConfirm}
+          title={confirmDialog.title}
+          description={confirmDialog.description}
+          confirmLabel={confirmDialog.confirmLabel}
+          variant={confirmDialog.variant}
+        />
+      </>
     );
   }
 

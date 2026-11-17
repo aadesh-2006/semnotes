@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.4] — 2026-11-17 (Milestone 4: Custom Milestone & Reward Engine)
+
+### Added
+- **Custom Milestone & Reward Engine:**
+  - Dedicated domain calculation and persistence module (`src/core/milestones/`):
+    - `MilestoneService`: Full CRUD for independent habit milestone thresholds, validation for positive integers ($T > 0$), duplicate rejection within the same habit, enable/disable toggling, and audited deletion.
+    - `AchievementEngine`: Pure deterministic streak segment extraction (`extractStreakSegments`) and achievement detection (`detectAchievementsForHabit`), identifying milestones earned on the exact calendar date of the threshold day.
+    - `RewardService`: Isolated claim ledger management (`claimReward`), recording celebration timestamps and reflection notes without ever mutating habit logs, schedules, or streaks.
+  - Strict mathematical invariants:
+    - Achievement identity: Compound key `[habitId + milestoneId + streakStartDate]` guaranteeing complete idempotency across evaluations.
+    - Repeat achievements: When a streak resets to 0 and a new streak reaches the threshold, a brand new achievement record is generated for the new streak instance, preserving all past achievements permanently.
+    - Historical immutability: Snapshots of `rewardTitle`, `rewardDescription`, and `thresholdDays` are frozen on unlock; editing or deleting milestone definitions never alters or deletes past earned achievements.
+- **Reward Center (`MilestonesView`):**
+  - Upgraded `/milestones` route into a dedicated 3-tab Reward Center:
+    - *Ready to Claim*: Displays unlocked milestone rewards waiting for manual claim with celebratory cards and claim triggers.
+    - *Upcoming Milestones*: Live progress tracking across active habits with visual progress bars (`X / Y days`), remaining days, and milestone management actions.
+    - *Reward Ledger*: Historical celebration archive recording claimed rewards, claim timestamps, and celebration reflection notes.
+    - Habit filter dropdown to isolate milestones and achievements per habit.
+- **Habit Detail Integration:**
+  - Integrated *Streak Milestones & Celebratory Rewards* card into `HabitDetailView`:
+    - Shows all configured milestones for the habit with live progress bars and status badges (*Claimed*, *Unlocked & Ready*, *In Progress*).
+    - Inline claim button launching `ClaimRewardModal`.
+    - "+ Add Milestone" button launching `MilestoneFormModal`.
+- **Command Center Integration:**
+  - Celebratory alert banner when unclaimed rewards are ready to claim.
+  - *Upcoming Milestones* preview card showing nearest rewards across active habits.
+- **Automated Test Suite:**
+  - Added 32 unit and integration tests (`src/core/milestones/milestoneEngine.test.ts`), bringing total passing tests to 70/70.
+
+---
+
 ## [1.0.0-alpha.3] — 2026-11-17 (Milestone 3: Independent Strict Streak Engine)
 
 ### Added

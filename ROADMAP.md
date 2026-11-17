@@ -7,7 +7,7 @@
 | **M1** | **Project Foundation** | **DONE** | Scaffolding, Obsidian & Gold design system, shell, Command Center, documentation. |
 | **M2** | **Habit Management** | **DONE** | Full CRUD, Abstinence/Completion/Quantitative types, schedules, live IndexedDB. |
 | **M3** | **Strict Streak Engine** | **DONE** | Deterministic calculations, strict reset logic, audit records, timezone safety. |
-| **M4** | **Milestones & Rewards** | Planned | Custom milestone schedules, reward claims, celebration triggers. |
+| **M4** | **Milestones & Rewards** | **DONE** | Custom milestone schedules, idempotent achievement detection, claim ledger. |
 | **M5** | **Journal & Reflection** | Planned | Private journal, urge diagnostic logger, mood & prompt tracking. |
 | **M6** | **Discipline Analytics** | Planned | Rolling 30-day score, Recharts visualizations, habit breakdown. |
 | **M7** | **Focus & Recovery** | Planned | Audited focus timer, session stats, setback forensics checklist. |
@@ -49,11 +49,19 @@
 - [x] Forensic timeline with `Streak Impact` indicators (`+1 Increment`, `Resets to 0`, `Neutral`).
 - [x] Automated test suite covering 20 streak scenarios (38/38 Vitest tests passing).
 
-### M4 — Custom Milestones & Rewards
-- [ ] Unlimited custom threshold day targets per habit.
-- [ ] Reward name and description configuration.
-- [ ] Idempotent unlock trigger detection.
-- [ ] Reward claim status and claimed history log.
+### M4 — Custom Milestones & Rewards (Completed)
+- [x] Independent milestone configuration per habit (`MilestoneService`).
+- [x] Unlimited positive whole-number thresholds ($T > 0$) with duplicate validation.
+- [x] Custom reward title, description, category, and personal reflection note.
+- [x] Pure deterministic achievement detection engine (`AchievementEngine.detectAchievementsForHabit`).
+- [x] Compound achievement identity `[habitId + milestoneId + streakStartDate]` guaranteeing complete idempotency.
+- [x] Strict streak reset & repeat unlock invariant: restarting a streak earns a second legitimate achievement record for the new run.
+- [x] Permanent preservation of historical achievements when streaks reset or milestone definitions are modified/deleted.
+- [x] Isolated reward claim workflow with notes and timestamps (`RewardService.claimReward`), never mutating streak state.
+- [x] Dedicated Reward Center (`MilestonesView`) with 3 tabs: *Ready to Claim*, *Upcoming Milestones*, and *Reward Ledger*.
+- [x] Habit Detail View integration with dedicated *Streak Milestones & Celebratory Rewards* card and live progress tracking.
+- [x] Command Center integration with alert banner for unclaimed rewards and *Upcoming Milestones* quick preview.
+- [x] Automated test suite covering 32 milestone, achievement, claim, and immutability scenarios (70/70 passing Vitest tests).
 
 ### M5 — Journal & Reflection
 - [ ] Daily sovereign reflection editor.

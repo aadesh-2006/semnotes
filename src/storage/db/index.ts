@@ -4,6 +4,7 @@ import type {
   HabitLog,
   AuditRecord,
   Milestone,
+  Achievement,
   JournalEntry,
   UrgeLog,
   FocusSession,
@@ -15,6 +16,7 @@ export class SemnotesDatabase extends Dexie {
   habitLogs!: Table<HabitLog, string>;
   auditRecords!: Table<AuditRecord, string>;
   milestones!: Table<Milestone, string>;
+  achievements!: Table<Achievement, string>;
   journalEntries!: Table<JournalEntry, string>;
   urgeLogs!: Table<UrgeLog, string>;
   focusSessions!: Table<FocusSession, string>;
@@ -35,6 +37,11 @@ export class SemnotesDatabase extends Dexie {
 
     this.version(2).stores({
       auditRecords: 'id, habitId, habitLogId, date, action, timestamp'
+    });
+
+    this.version(3).stores({
+      milestones: 'id, habitId, thresholdDays, isEnabled, [habitId+thresholdDays], createdAt',
+      achievements: 'id, habitId, milestoneId, thresholdDays, streakStartDate, isClaimed, achievedDate, [habitId+milestoneId+streakStartDate]'
     });
   }
 }

@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation), M2 (Habit Management), & M3 (Strict Streak Engine) Complete
+**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), & M4 (Custom Milestone & Reward Engine) Complete
 
 ---
 
@@ -14,28 +14,32 @@ SEMNÓTĒS is architected with strict separation of concerns across four key lay
 ┌────────────────────────────────────────────────────────┐
 │                   Presentation Layer                   │
 │   (React 19, Tailwind CSS, Lucide, AppShell, Views)    │
-│   - CommandCenter (Live active streak metrics)         │
+│   - CommandCenter (Live active streak & milestone cards│
 │   - StreaksView (Independent streak cards)             │
-│   - HabitDetailView (Timeline, Forensic streak data)   │
-│   - HabitFormModal & CheckInModal                      │
+│   - MilestonesView (Reward Center, 3 tab ledger)       │
+│   - HabitDetailView (Timeline, Milestones & Rewards)   │
+│   - MilestoneFormModal & ClaimRewardModal              │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                    Application Layer                   │
-│    (StreakEngine, HabitService, HabitLogService,       │
-│     ScheduleService, HabitDashboardService)            │
+│    (StreakEngine, MilestoneService, RewardService,     │
+│     AchievementEngine, HabitService, HabitLogService)  │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                   Domain Engine Layer                  │
 │    (StreakCalculator: Pure deterministic math,         │
+│     detectAchievementsForHabit, extractStreakSegments, │
 │     StreakUtils, Zod Entities, Invariant Rules)        │
 │             * Zero React / UI Dependencies *           │
 └───────────────────────────┬────────────────────────────┘
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                  Persistence Layer                     │
-│  (Dexie.js IndexedDB: semnotes_db v2, Audit Trails)    │
+│  (Dexie.js IndexedDB: semnotes_db v3, Audit Trails)    │
+│   - habits, habitLogs, auditRecords,                   │
+│   - milestones, achievements                           │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -82,51 +86,52 @@ Resetting or failing $H_a$ has zero effect on the streak calculations of $H_b$.
 
 ---
 
-## 2. Habit Management Domain Specifications
+## 3. Custom Milestone & Reward Engine (Formal Specification)
 
-### A. Tracking Types
-1. **Abstinence Tracking:**
-   - Daily outcomes: *Maintained Standard* (`status: 'completed'`) vs *Setback / Relapse* (`status: 'failed'`).
-   - Purpose: Breaking negative loops (pornography, smoking, dopamine binging) where success is defined by avoiding the trigger.
-2. **Binary Completion Tracking:**
-   - Daily outcomes: *Completed* (`status: 'completed'`) vs *Missed* (`status: 'failed'`).
-   - Purpose: Daily habits requiring positive action (DSA problem solving, deep reading, calisthenics).
-3. **Quantitative Tracking:**
-   - Target configuration: `targetValue: number`, `unit: string`, `targetConstraint: 'at_least' | 'at_most'`.
-   - Determination: Evaluated on log entry. If `at_least`, `numericValue >= targetValue ? 'completed' : 'failed'`. If `at_most`, `numericValue <= targetValue ? 'completed' : 'failed'`.
-
-### B. Scheduling Engine
-- `frequency: 'daily' | 'selected_days'`.
-- Selected days use `selectedDays: number[]` (0=Sun, 1=Mon, ..., 6=Sat).
-- Unscheduled days are strictly categorized as `rest_day` or `skipped`; **unscheduled days are never marked as missed**.
-- Bound check against `startDate` and optional `endDate`.
+### A. Core Mathematical & Data Invariants
+1. **Threshold Formulation:**
+   Every milestone threshold $T \in \mathbb{Z}^+$ must be a strictly positive integer ($T > 0$).
+2. **Per-Habit Threshold Uniqueness:**
+   $$\forall M_1, M_2 \in \text{Milestones}(H) \quad (M_1 \ne M_2 \implies T_1 \ne T_2)$$
+   Duplicate thresholds are strictly prohibited within the same habit, but identical thresholds are permitted across distinct habits.
+3. **Streak Segments & Achievement Identity:**
+   A timeline is partitioned into disjoint contiguous streak segments:
+   $$\text{Segment}_k = \left( D_{\text{start}}^{(k)}, \, [d_1, d_2, \dots, d_{L_k}] \right)$$
+   An achievement record is uniquely and immutably identified by the compound triple:
+   $$\text{AchievementKey} = ( \text{habitId}, \, \text{milestoneId}, \, D_{\text{start}}^{(k)} )$$
+4. **Exact Calendar Achievement Date:**
+   When a streak segment length $L_k \ge T$, the achievement is unlocked on the exact calendar date of the $T$-th completed day:
+   $$D_{\text{achieved}} = d_T$$
+5. **Strict Streak Reset & Repeat Unlock Invariant:**
+   - If a streak breaks (resets to 0) and the user later starts a new streak segment $k+1$ where $D_{\text{start}}^{(k+1)} > D_{\text{start}}^{(k)}$ and reaches threshold $T$, a **brand new achievement record** is legitimately earned and recorded.
+   - Historical achievements from past streak instances are permanently preserved in IndexedDB.
+6. **Historical Snapshot Immutability:**
+   Achievements store frozen snapshots of reward metadata (`rewardTitle`, `rewardDescription`, `thresholdDays`, `achievedDate`). Editing or deleting a milestone definition never alters or erases past earned achievements.
+7. **Streak Isolation Invariant:**
+   Claiming an unlocked reward sets `isClaimed = true`, `claimedAt`, and `claimNotes`. Claiming **NEVER** modifies habit logs, active streaks, or streak calculations.
 
 ---
 
-## 3. Data Schema & Persistence (IndexedDB v2)
+## 4. Data Schema & Persistence (IndexedDB v3)
 
 The schema is defined in `src/core/domain/types.ts` and indexed via Dexie in `src/storage/db/index.ts`:
 
 - `habits`: `id, category, type, status, startDate, createdAt`
 - `habitLogs`: `id, habitId, date, status, [habitId+date]`
 - `auditRecords`: `id, habitId, habitLogId, date, action, timestamp`
-- `milestones`: `id, habitId, thresholdDays, isUnlocked, isClaimed`
+- `milestones`: `id, habitId, thresholdDays, isEnabled, [habitId+thresholdDays]`
+- `achievements`: `id, habitId, milestoneId, isClaimed, achievedDate, claimedAt, [habitId+streakStartDate], [habitId+milestoneId+streakStartDate]`
 - `journalEntries`: `id, date, mood, createdAt`
 - `urgeLogs`: `id, habitId, timestamp, intensity, response`
 - `focusSessions`: `id, habitId, startedAt, status`
 - `userSettings`: `id`
 
-### Calendar Dates vs Timestamps
-- Calendar dates are recorded as ISO local strings (`YYYY-MM-DD`). This prevents timezone crossing bugs where check-ins made at 11:30 PM shift to the next day upon export or browser timezone switch.
-- Event audit times use UTC ISO8601 strings (`2026-11-17T15:30:00.000Z`).
-
 ---
 
-## 4. Milestone & Reward Engine
+## 5. Security & Privacy Blueprint
 
-- **Idempotency:** Milestones are evaluated on log creation. Once `isUnlocked = true`, subsequent evaluations will not emit redundant unlock events or rewards.
-- **Customization:** Users define threshold day targets (e.g. 7, 14, 30, 90 days) independently per habit.
-- **Reward Claims:** Unlocked rewards transition to `isClaimed = true` with a timestamp, preserving the celebration history.
+- **Zero Telemetry:** No third-party analytical SDKs or tracking cookies.
+- **Client-Side Encryption (Roadmap M8):** Web Crypto API AES-GCM 256-bit encryption for journal and urge logs before optional Supabase synchronization.
 
 ---
 

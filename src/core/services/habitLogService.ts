@@ -6,6 +6,7 @@ import {
   HabitLogSchema
 } from '../domain/types';
 import { generateUUID } from '../utils';
+import { AchievementEngine } from '../milestones/achievementEngine';
 
 export interface CheckInInput {
   status?: HabitLogStatus;
@@ -60,7 +61,7 @@ export class HabitLogService {
       resolvedStatus = input.status || 'completed';
     }
 
-    return await db.transaction('rw', db.habitLogs, db.auditRecords, async () => {
+    const result = await db.transaction('rw', db.habitLogs, db.auditRecords, async () => {
       // Check if a record already exists for this date
       const existing = await db.habitLogs
         .where('[habitId+date]')
@@ -128,6 +129,14 @@ export class HabitLogService {
 
       return validated;
     });
+
+    try {
+      await AchievementEngine.evaluateAndRecordAchievements(habit.id);
+    } catch {
+      // Ignore evaluation failure in check-in flow
+    }
+
+    return result;
   }
 
   /**
@@ -143,7 +152,7 @@ export class HabitLogService {
 
     const now = new Date().toISOString();
 
-    return await db.transaction('rw', db.habitLogs, db.auditRecords, async () => {
+    const result = await db.transaction('rw', db.habitLogs, db.auditRecords, async () => {
       const existing = await db.habitLogs.get(logId);
       if (!existing) {
         throw new Error(`Habit log with ID ${logId} not found`);
@@ -179,6 +188,14 @@ export class HabitLogService {
 
       return validated;
     });
+
+    try {
+      await AchievementEngine.evaluateAndRecordAchievements(result.habitId);
+    } catch {
+      // Ignore evaluation failure
+    }
+
+    return result;
   }
 
   /**

@@ -41,6 +41,8 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
   const habits = useLiveQuery(() => db.habits.where('status').equals('active').toArray(), []);
   const allLogs = useLiveQuery(() => db.habitLogs.toArray(), []);
   const allAudits = useLiveQuery(() => db.auditRecords.toArray(), []);
+  const allMilestones = useLiveQuery(() => db.milestones.toArray(), []);
+  const allAchievements = useLiveQuery(() => db.achievements.toArray(), []);
 
   // Check-in modal state
   const [checkInHabit, setCheckInHabit] = useState<Habit | null>(null);
@@ -138,6 +140,34 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
     }
   }
 
+  const unclaimedRewards = useMemo(() => {
+    return (allAchievements || []).filter((a) => !a.isClaimed);
+  }, [allAchievements]);
+
+  const nearestMilestones = useMemo(() => {
+    if (!allMilestones || !habits) return [];
+    const habitTitleMap = new Map(habits.map((h) => [h.id, h.title]));
+
+    return allMilestones
+      .filter((m) => m.isEnabled)
+      .map((m) => {
+        const streak = streakMap.get(m.habitId);
+        const current = streak?.currentStreak || 0;
+        const remaining = Math.max(0, m.thresholdDays - current);
+        const progress = Math.min(100, Math.round((current / m.thresholdDays) * 100));
+        return {
+          ...m,
+          habitTitle: habitTitleMap.get(m.habitId) || 'Habit',
+          currentStreak: current,
+          remainingDays: remaining,
+          progress
+        };
+      })
+      .filter((m) => m.remainingDays > 0)
+      .sort((a, b) => a.remainingDays - b.remainingDays)
+      .slice(0, 3);
+  }, [allMilestones, habits, streakMap]);
+
   const handleOpenCheckIn = (habit: Habit) => {
     setCheckInHabit(habit);
     setIsCheckInOpen(true);
@@ -167,7 +197,7 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           <div className="space-y-2 max-w-2xl">
             <div className="flex items-center gap-2">
               <Badge variant="gold" size="sm" className="font-mono">
-                COMMAND CENTER &bull; M3
+                COMMAND CENTER &bull; M4
               </Badge>
               <span className="text-xs text-slate-400 font-mono">
                 {formatFriendlyDate(new Date())}
@@ -216,6 +246,33 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
           </span>
         </div>
       </div>
+
+      {/* Unclaimed Rewards Alert Banner */}
+      {unclaimedRewards.length > 0 && (
+        <div className="p-4 rounded-xl bg-gradient-to-r from-gold-950/50 via-obsidian-850 to-gold-950/30 border border-gold-500/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-gold-sm">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gold-500/20 border border-gold-500/40 flex items-center justify-center text-gold-400 shrink-0">
+              <Trophy className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-sm font-bold text-gold-300 font-serif">
+                {unclaimedRewards.length} Milestone Reward{unclaimedRewards.length > 1 ? 's' : ''} Ready to Claim!
+              </div>
+              <div className="text-xs text-slate-300">
+                You have reached your streak commitment threshold. Honor your discipline.
+              </div>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onNavigate('milestones')}
+            className="text-xs shrink-0"
+          >
+            Claim Rewards &rarr;
+          </Button>
+        </div>
+      )}
 
       {/* 4-Column Real Metrics Cards (Zero Mock Data) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -511,6 +568,61 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
               )}
             </CardContent>
           </Card>
+
+          {/* Nearest Upcoming Milestones */}
+          {nearestMilestones.length > 0 && (
+            <Card className="border-obsidian-750 bg-obsidian-850">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Trophy className="w-4 h-4 text-amber-400" />
+                    <span>Upcoming Milestones</span>
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onNavigate('milestones')}
+                    className="text-xs text-gold-400 hover:text-gold-300"
+                  >
+                    Reward Center
+                  </Button>
+                </div>
+                <CardDescription>
+                  Nearest rewards unlocked by maintaining active streaks.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-3 pt-1">
+                {nearestMilestones.map((m) => (
+                  <div
+                    key={m.id}
+                    onClick={() => onNavigate('milestones')}
+                    className="p-3 rounded-xl bg-obsidian-800/80 border border-obsidian-750 hover:border-gold-500/40 cursor-pointer transition-all space-y-2"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <span className="font-semibold text-slate-200">{m.rewardTitle}</span>
+                        <span className="text-[11px] text-slate-400 block truncate max-w-[200px]">
+                          {m.habitTitle}
+                        </span>
+                      </div>
+                      <Badge variant="gold" size="sm" className="font-mono text-[10px]">
+                        {m.thresholdDays}d Target
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+                        <span>{m.currentStreak} / {m.thresholdDays} days</span>
+                        <span className="text-gold-300 font-bold">{m.remainingDays}d to go</span>
+                      </div>
+                      <Progress value={m.progress} />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Evening Reflection Prompt Card */}
           <Card className="border-gold-600/30 bg-gradient-to-br from-obsidian-850 to-obsidian-900">
