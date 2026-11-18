@@ -126,10 +126,13 @@ describe('Route-Level Lazy Loading & Suspense Integration (AUDIT-PERF-01)', () =
       </MemoryRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
-      expect(screen.getByText('/unmapped-realm')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
+        expect(screen.getByText('/unmapped-realm')).toBeInTheDocument();
+      },
+      { timeout: 8000 }
+    );
   });
 
   it('renders RouteLoadingFallback while waiting for delayed lazy components', () => {

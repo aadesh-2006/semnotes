@@ -119,7 +119,8 @@ describe('Milestone 9: Data Management, Backup, Restore & Sync End-to-End Workfl
     // -------------------------------------------------------------
     const envelope = await EncryptionService.encryptPayload(exportedBackup, masterPassword);
     expect(envelope.algorithm).toBe('AES-256-GCM');
-    expect(envelope.kdfParams.iterations).toBe(100000);
+    expect(envelope.formatVersion).toBe('2.0');
+    expect(envelope.kdfParams.iterations).toBe(600000);
 
     // Wrong password fails
     await expect(
