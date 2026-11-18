@@ -20,7 +20,7 @@ export const HabitTypeSchema = z.enum([
 ]);
 export type HabitType = z.infer<typeof HabitTypeSchema>;
 
-export const HabitStatusSchema = z.enum(['active', 'paused', 'archived']);
+export const HabitStatusSchema = z.enum(['active', 'paused', 'archived', 'deleted']);
 export type HabitStatus = z.infer<typeof HabitStatusSchema>;
 
 export const TargetConstraintSchema = z.enum(['at_least', 'at_most']).default('at_least');
@@ -54,6 +54,7 @@ export const HabitSchema = z.object({
   startDate: z.string(), // YYYY-MM-DD
   endDate: z.string().optional(), // Optional YYYY-MM-DD
   status: HabitStatusSchema.default('active'),
+  deletedAt: z.string().optional(), // ISO8601 timestamp when status === 'deleted'
   createdAt: z.string(), // ISO8601
   updatedAt: z.string(), // ISO8601
   sortOrder: z.number().default(0),
@@ -66,6 +67,7 @@ export const CreateHabitInputSchema = HabitSchema.omit({
   createdAt: true,
   updatedAt: true,
   sortOrder: true,
+  deletedAt: true,
 }).extend({
   description: z.string().default('').optional(),
   status: HabitStatusSchema.default('active').optional(),
@@ -107,7 +109,7 @@ export const AuditRecordSchema = z.object({
   habitId: z.string().uuid(),
   habitLogId: z.string().uuid().optional(),
   date: z.string(), // YYYY-MM-DD
-  action: z.enum(['create', 'check_in', 'correction', 'status_change', 'archive', 'pause', 'resume']),
+  action: z.enum(['create', 'check_in', 'correction', 'status_change', 'archive', 'pause', 'resume', 'delete', 'purge']),
   previousStatus: z.string().optional(),
   newStatus: z.string().optional(),
   previousValue: z.number().optional(),

@@ -25,9 +25,11 @@ export class CalendarAggregationService {
     pausedRanges: PausedDateRange[],
     evaluationDate: string
   ): DayHabitDetail {
-    // 1. Check lifecycle (startDate to optional endDate)
+    // 1. Check lifecycle (startDate to optional endDate, and optional deletedAt)
     const isLifecycleActive =
-      date >= habit.startDate && (!habit.endDate || date <= habit.endDate);
+      date >= habit.startDate &&
+      (!habit.endDate || date <= habit.endDate) &&
+      (!habit.deletedAt || date <= habit.deletedAt.split('T')[0]);
 
     // 2. Check paused status
     const isPaused = isLifecycleActive && isDateInPausedRanges(date, pausedRanges);

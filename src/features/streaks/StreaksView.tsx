@@ -121,6 +121,7 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
 
   // Filter habits
   const filteredHabits = (allHabits || []).filter((habit) => {
+    if (statusFilter === 'all' && habit.status === 'deleted') return false;
     if (statusFilter !== 'all' && habit.status !== statusFilter) return false;
     if (categoryFilter !== 'all' && habit.category !== categoryFilter) return false;
     return true;

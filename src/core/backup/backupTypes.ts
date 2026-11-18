@@ -20,7 +20,7 @@ import type { FocusPreferences } from '../focus/focusTypes';
 
 export const BACKUP_FORMAT_VERSION = '1.0';
 export const APPLICATION_ID = 'semnotes';
-export const CURRENT_DB_VERSION = 5;
+export const CURRENT_DB_VERSION = 6;
 
 export interface SemnotesBackupManifest {
   app: string;                      // 'semnotes'

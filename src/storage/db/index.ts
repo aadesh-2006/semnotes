@@ -58,6 +58,13 @@ export class SemnotesDatabase extends Dexie {
     this.version(5).stores({
       focusSessions: 'id, habitId, linkedHabitId, startedAt, status, sessionMode, date, createdAt'
     });
+
+    this.version(6).stores({
+      habits: 'id, category, type, status, startDate, createdAt, deletedAt'
+    }).upgrade(() => {
+      // Version 6 migration: indexes deletedAt for tombstone lifecycle support.
+      // Existing habits remain intact with their active/paused/archived statuses.
+    });
   }
 }
 
