@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '../../components/ui/badge';
 import { RefreshCw } from 'lucide-react';
 import { CalendarSummary } from './CalendarSummary';
@@ -24,6 +25,7 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ onNavigate }: CalendarViewProps) {
+  const navigate = useNavigate();
   const todayStr = useMemo(() => formatCalendarDate(new Date()), []);
   const todayDate = useMemo(() => new Date(), []);
 
@@ -214,10 +216,11 @@ export function CalendarView({ onNavigate }: CalendarViewProps) {
             date={selectedDate}
             onClose={() => setSelectedDate('')}
             onOpenCheckIn={handleOpenCheckIn}
-            onNavigateToHabit={(_habitId) => {
+            onNavigateToHabit={(habitId) => {
               if (onNavigate) {
                 onNavigate('streaks');
               }
+              navigate(`/streaks/${habitId}`);
             }}
             habitsMap={habitsMap}
           />

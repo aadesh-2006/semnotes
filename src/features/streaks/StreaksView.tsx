@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
 import {
@@ -33,9 +34,14 @@ interface StreaksViewProps {
 }
 
 export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: StreaksViewProps) {
+  const { habitId: habitIdFromUrl } = useParams<{ habitId?: string }>();
+  const navigate = useNavigate();
+
   const [statusFilter, setStatusFilter] = useState<'all' | HabitStatus>('all');
   const [categoryFilter, setCategoryFilter] = useState<'all' | HabitCategory>('all');
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(selectedHabitIdFromParent || null);
+
+  const activeHabitId = habitIdFromUrl || selectedHabitId;
 
   // Modal states
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -191,12 +197,17 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
   };
 
   // If a habit detail view is active, render it
-  if (selectedHabitId) {
+  if (activeHabitId) {
     return (
       <>
         <HabitDetailView
-          habitId={selectedHabitId}
-          onBack={() => setSelectedHabitId(null)}
+          habitId={activeHabitId}
+          onBack={() => {
+            setSelectedHabitId(null);
+            if (habitIdFromUrl) {
+              navigate('/streaks');
+            }
+          }}
           onEdit={handleOpenEdit}
           onCheckIn={handleCheckIn}
           onPauseToggle={handlePauseToggle}
@@ -346,7 +357,10 @@ export function StreaksView({ onOpenNewHabit, selectedHabitIdFromParent }: Strea
                 totalSuccessDays={streak?.totalSuccessfulDays || 0}
                 streak={streak}
                 onCheckIn={handleCheckIn}
-                onViewDetails={(h) => setSelectedHabitId(h.id)}
+                onViewDetails={(h) => {
+                  setSelectedHabitId(h.id);
+                  navigate(`/streaks/${h.id}`);
+                }}
                 onEdit={handleOpenEdit}
                 onPauseToggle={handlePauseToggle}
                 onArchiveToggle={handleArchiveToggle}
