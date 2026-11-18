@@ -92,8 +92,17 @@ export interface RestoreResult {
   safetyBackupId?: string;
 }
 
+export interface MergeConflictDetail {
+  table: string;
+  recordId: string;
+  description: string;
+  resolution: 'kept_local' | 'skipped' | 'merged';
+}
+
 export interface MergeRestoreResult extends RestoreResult {
   insertedCount: number;
   skippedCount: number;
   updatedCount: number;
+  conflictCount: number;
+  conflicts: MergeConflictDetail[];
 }
