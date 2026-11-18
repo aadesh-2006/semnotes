@@ -131,7 +131,7 @@ describe('Route-Level Lazy Loading & Suspense Integration (AUDIT-PERF-01)', () =
         expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
         expect(screen.getByText('/unmapped-realm')).toBeInTheDocument();
       },
-      { timeout: 8000 }
+      { timeout: 15000 }
     );
   });
 

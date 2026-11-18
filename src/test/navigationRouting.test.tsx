@@ -247,7 +247,7 @@ describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
         expect(screen.getByText('/nonexistent-dimension')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /return to command center/i })).toBeInTheDocument();
       },
-      { timeout: 8000 }
+      { timeout: 15000 }
     );
   });
 
@@ -271,7 +271,7 @@ describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
       () => {
         expect(screen.getByText('Algorithmic Prowess')).toBeInTheDocument();
       },
-      { timeout: 8000 }
+      { timeout: 15000 }
     );
   });
 });

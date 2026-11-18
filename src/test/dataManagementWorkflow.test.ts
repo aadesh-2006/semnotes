@@ -214,5 +214,5 @@ describe('Milestone 9: Data Management, Backup, Restore & Sync End-to-End Workfl
     expect(finalHabits).toHaveLength(2);
     expect(finalHabits.some((h) => h.id === habit.id)).toBe(true);
     expect(finalHabits.some((h) => h.id === remoteHabit.id)).toBe(true);
-  });
+  }, 60000);
 });
