@@ -64,7 +64,7 @@ export function BackupExportPanel() {
           return;
         }
 
-        setStatusMessage('Deriving 256-bit AES key (PBKDF2 100k iterations)...');
+        setStatusMessage('Deriving 256-bit AES key (PBKDF2 600k iterations)...');
         const payload = await BackupExportService.generateBackup();
         const envelope = await EncryptionService.encryptPayload(payload, password);
 
