@@ -14,10 +14,8 @@ import {
   getRouteIdFromPathname,
   getPathForRoute,
   isKnownRoutePath,
-  type RouteId,
 } from '../app/routes';
 import { db } from '../storage/db';
-import { generateUUID } from '../core/utils';
 import { HabitService } from '../core/services/habitService';
 
 describe('Centralized Route Configuration (AUDIT-ROUT-01)', () => {
@@ -103,7 +101,6 @@ describe('Database State Preservation Across Navigation (AUDIT-ROUT-01)', () => 
   });
 
   it('preserves IndexedDB data during routing and URL navigation events', async () => {
-    const habitId = generateUUID();
     await HabitService.createHabit({
       title: 'Deep Meditation',
       description: 'Morning meditation habit',
