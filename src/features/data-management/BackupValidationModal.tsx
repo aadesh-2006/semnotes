@@ -126,18 +126,27 @@ export function BackupValidationModal({
               Choose Restore Strategy:
             </label>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div role="radiogroup" aria-label="Restore Strategy" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {/* Mode 2: Merge */}
               <div
+                role="radio"
+                aria-checked={selectedMode === 'merge'}
+                tabIndex={0}
                 onClick={() => setSelectedMode('merge')}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedMode('merge');
+                  }
+                }}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
                   selectedMode === 'merge'
                     ? 'border-gold-500 bg-gold-950/20 text-slate-100'
                     : 'border-obsidian-750 bg-obsidian-900/50 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <Layers className={`w-4 h-4 ${selectedMode === 'merge' ? 'text-gold-400' : 'text-slate-500'}`} />
+                  <Layers className={`w-4 h-4 ${selectedMode === 'merge' ? 'text-gold-400' : 'text-slate-500'}`} aria-hidden="true" />
                   <span className="text-xs font-bold text-slate-200">Merge Data (Additive)</span>
                   <Badge variant="gold" size="sm">Recommended</Badge>
                 </div>
@@ -148,15 +157,24 @@ export function BackupValidationModal({
 
               {/* Mode 1: Replace */}
               <div
+                role="radio"
+                aria-checked={selectedMode === 'replace'}
+                tabIndex={0}
                 onClick={() => setSelectedMode('replace')}
-                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedMode('replace');
+                  }
+                }}
+                className={`p-3 rounded-lg border cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
                   selectedMode === 'replace'
                     ? 'border-red-500/80 bg-red-950/20 text-slate-100'
                     : 'border-obsidian-750 bg-obsidian-900/50 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <RefreshCw className={`w-4 h-4 ${selectedMode === 'replace' ? 'text-red-400' : 'text-slate-500'}`} />
+                  <RefreshCw className={`w-4 h-4 ${selectedMode === 'replace' ? 'text-red-400' : 'text-slate-500'}`} aria-hidden="true" />
                   <span className="text-xs font-bold text-slate-200">Replace Database</span>
                   <Badge variant="outline" size="sm">Destructive</Badge>
                 </div>

@@ -139,7 +139,7 @@ export function BackupExportPanel() {
         <div className="p-3.5 rounded-lg bg-obsidian-850/60 border border-obsidian-750 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-gold-400" />
+              <Shield className="w-4 h-4 text-gold-400" aria-hidden="true" />
               <div>
                 <span className="text-xs font-semibold text-slate-200">Client-Side AES-256 Encryption</span>
                 <p className="text-[11px] text-slate-400">
@@ -151,6 +151,7 @@ export function BackupExportPanel() {
               type="button"
               variant={isEncrypted ? 'primary' : 'outline'}
               size="sm"
+              aria-pressed={isEncrypted}
               onClick={() => setIsEncrypted(!isEncrypted)}
               className="text-xs h-7"
             >
@@ -161,29 +162,31 @@ export function BackupExportPanel() {
           {isEncrypted && (
             <div className="pt-2 border-t border-obsidian-750 grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">Passphrase</label>
+                <label htmlFor="export-passphrase" className="text-[11px] font-mono text-slate-400 block mb-1">Passphrase</label>
                 <div className="relative">
-                  <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" aria-hidden="true" />
                   <input
+                    id="export-passphrase"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter strong passphrase..."
-                    className="w-full bg-obsidian-900 border border-obsidian-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full bg-obsidian-900 border border-obsidian-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-mono text-slate-400 block mb-1">Confirm Passphrase</label>
+                <label htmlFor="export-confirm-passphrase" className="text-[11px] font-mono text-slate-400 block mb-1">Confirm Passphrase</label>
                 <div className="relative">
-                  <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
+                  <KeyRound className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" aria-hidden="true" />
                   <input
+                    id="export-confirm-passphrase"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Re-enter passphrase..."
-                    className="w-full bg-obsidian-900 border border-obsidian-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 font-mono"
+                    className="w-full bg-obsidian-900 border border-obsidian-700 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400 font-mono"
                   />
                 </div>
               </div>
@@ -193,15 +196,23 @@ export function BackupExportPanel() {
 
         {/* Feedback messages */}
         {statusMessage && (
-          <div className="p-3 rounded-md bg-gold-950/30 border border-gold-800/40 text-xs text-gold-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div
+            role="status"
+            aria-live="polite"
+            className="p-3 rounded-md bg-gold-950/30 border border-gold-800/40 text-xs text-gold-300 flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
             <span>{statusMessage}</span>
           </div>
         )}
 
         {errorMessage && (
-          <div className="p-3 rounded-md bg-red-950/30 border border-red-800/40 text-xs text-red-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <div
+            role="alert"
+            aria-live="polite"
+            className="p-3 rounded-md bg-red-950/30 border border-red-800/40 text-xs text-red-300 flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
             <span>{errorMessage}</span>
           </div>
         )}

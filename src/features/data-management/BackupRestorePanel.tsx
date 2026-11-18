@@ -164,14 +164,24 @@ export function BackupRestorePanel({ onRestoreComplete }: { onRestoreComplete?: 
           accept=".json,.enc.json"
           onChange={handleFileSelect}
           className="hidden"
+          aria-label="Upload backup JSON file"
         />
 
         {/* Upload Dropzone UI */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Upload backup file: Click to select or drop SEMNÓTĒS backup"
           onClick={() => fileInputRef.current?.click()}
-          className="p-6 border-2 border-dashed border-obsidian-700 hover:border-gold-500/60 rounded-lg bg-obsidian-850/50 hover:bg-obsidian-850 transition-all cursor-pointer text-center space-y-2"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              fileInputRef.current?.click();
+            }
+          }}
+          className="p-6 border-2 border-dashed border-obsidian-700 hover:border-gold-500/60 rounded-lg bg-obsidian-850/50 hover:bg-obsidian-850 transition-all cursor-pointer text-center space-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900"
         >
-          <div className="w-10 h-10 mx-auto rounded-full bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-400">
+          <div className="w-10 h-10 mx-auto rounded-full bg-obsidian-800 border border-obsidian-700 flex items-center justify-center text-gold-400" aria-hidden="true">
             <FileJson className="w-5 h-5" />
           </div>
           <div className="text-xs font-semibold text-slate-200">
@@ -186,41 +196,54 @@ export function BackupRestorePanel({ onRestoreComplete }: { onRestoreComplete?: 
         {isEncryptedFile && (
           <div className="p-3.5 rounded-lg bg-gold-950/20 border border-gold-800/40 space-y-3">
             <div className="flex items-center gap-2 text-gold-300 text-xs font-semibold">
-              <Lock className="w-4 h-4" />
+              <Lock className="w-4 h-4" aria-hidden="true" />
               <span>Encrypted Backup Detected (AES-256-GCM)</span>
             </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="password"
-                value={decryptPassword}
-                onChange={(e) => setDecryptPassword(e.target.value)}
-                placeholder="Enter decryption passphrase..."
-                className="flex-1 bg-obsidian-900 border border-obsidian-700 rounded-md px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 font-mono"
-              />
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={handleDecryptAndValidate}
-                disabled={isLoading}
-                className="text-xs"
-              >
-                {isLoading ? 'Decrypting...' : 'Decrypt & Validate'}
-              </Button>
+            <div>
+              <label htmlFor="decrypt-passphrase-input" className="sr-only">Decryption Passphrase</label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="decrypt-passphrase-input"
+                  type="password"
+                  value={decryptPassword}
+                  onChange={(e) => setDecryptPassword(e.target.value)}
+                  placeholder="Enter decryption passphrase..."
+                  aria-label="Enter decryption passphrase"
+                  className="flex-1 bg-obsidian-900 border border-obsidian-700 rounded-md px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400 font-mono"
+                />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleDecryptAndValidate}
+                  disabled={isLoading}
+                  className="text-xs"
+                >
+                  {isLoading ? 'Decrypting...' : 'Decrypt & Validate'}
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
         {/* Messages */}
         {errorMessage && (
-          <div className="p-3 rounded-md bg-red-950/30 border border-red-800/40 text-xs text-red-300 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+          <div
+            role="alert"
+            aria-live="polite"
+            className="p-3 rounded-md bg-red-950/30 border border-red-800/40 text-xs text-red-300 flex items-center gap-2"
+          >
+            <AlertCircle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
             <span>{errorMessage}</span>
           </div>
         )}
 
         {restoreSuccessMessage && (
-          <div className="p-3 rounded-md bg-emerald-950/30 border border-emerald-800/40 text-xs text-emerald-300 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <div
+            role="status"
+            aria-live="polite"
+            className="p-3 rounded-md bg-emerald-950/30 border border-emerald-800/40 text-xs text-emerald-300 flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" aria-hidden="true" />
             <span>{restoreSuccessMessage}</span>
           </div>
         )}

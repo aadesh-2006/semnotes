@@ -148,7 +148,7 @@ export function FocusTimer({
       <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-gold-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Meta Header */}
-      <div className="w-full flex items-center justify-between gap-3 mb-6 relative z-10">
+      <div className="w-full flex items-center justify-between gap-3 mb-6 relative z-10" role="status" aria-live="polite">
         <div className="flex items-center gap-2">
           {getPhaseBadge()}
           {getStatusBadge()}
@@ -175,7 +175,15 @@ export function FocusTimer({
 
       {/* Centerpiece Circular Progress Ring */}
       <div className="relative flex items-center justify-center my-2 select-none">
-        <svg className="w-72 h-72 sm:w-80 sm:h-80 -rotate-90 transform" viewBox="0 0 300 300">
+        <svg
+          role="progressbar"
+          aria-valuenow={Math.round(progressPercent)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Session progress"
+          className="w-72 h-72 sm:w-80 sm:h-80 -rotate-90 transform"
+          viewBox="0 0 300 300"
+        >
           {/* Background Track */}
           <circle
             cx="150"
@@ -204,7 +212,11 @@ export function FocusTimer({
         </svg>
 
         {/* Center Clock Display */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <div
+          role="timer"
+          aria-label={`Time remaining: ${FocusTimerEngine.formatDigitalClock(remainingSeconds)}`}
+          className="absolute inset-0 flex flex-col items-center justify-center text-center"
+        >
           <span className="font-mono text-5xl sm:text-6xl font-extrabold tracking-tight text-slate-100 tabular-nums drop-shadow-lg">
             {FocusTimerEngine.formatDigitalClock(remainingSeconds)}
           </span>
