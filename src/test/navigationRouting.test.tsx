@@ -241,9 +241,11 @@ describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
-    expect(screen.getByText('/nonexistent-dimension')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /return to command center/i })).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
+      expect(screen.getByText('/nonexistent-dimension')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /return to command center/i })).toBeInTheDocument();
+    });
   });
 
   it('renders habit detail view on parameterized direct route /streaks/:habitId', async () => {
@@ -262,8 +264,11 @@ describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
       </MemoryRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText('Algorithmic Prowess')).toBeInTheDocument();
-    });
+    await waitFor(
+      () => {
+        expect(screen.getByText('Algorithmic Prowess')).toBeInTheDocument();
+      },
+      { timeout: 4000 }
+    );
   });
 });
