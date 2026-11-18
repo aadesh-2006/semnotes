@@ -124,42 +124,62 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
   // Derive metrics purely from actual database data
   const totalActiveCount = habits?.length || 0;
 
-  const scheduledTodayHabits = (habits || []).filter((h) =>
-    isScheduledDay(h.schedule, todayStr, h.startDate, h.endDate)
-  );
+  // Memoize today's scheduled habits, completion metrics, and streak aggregates
+  const todayDisciplineMetrics = useMemo(() => {
+    const scheduled = (habits || []).filter((h) =>
+      isScheduledDay(h.schedule, todayStr, h.startDate, h.endDate)
+    );
 
-  const completedTodayCount = scheduledTodayHabits.filter((h) => {
-    const log = todayLogMap.get(h.id);
-    return log?.status === 'completed';
-  }).length;
+    let completed = 0;
+    let pending = 0;
+    let failed = 0;
 
-  const pendingTodayCount = scheduledTodayHabits.filter((h) => {
-    const log = todayLogMap.get(h.id);
-    return !log;
-  }).length;
-
-  const failedTodayCount = scheduledTodayHabits.filter((h) => {
-    const log = todayLogMap.get(h.id);
-    return log?.status === 'failed' || log?.status === 'missed';
-  }).length;
-
-  const completionPercentage =
-    scheduledTodayHabits.length > 0
-      ? Math.round((completedTodayCount / scheduledTodayHabits.length) * 100)
-      : 0;
-
-  // Real streak counts derived from StreakCalculator
-  let activeStreaksCount = 0;
-  let allTimeLongestStreak = 0;
-
-  for (const [, streak] of streakMap) {
-    if (streak.currentStreak > 0) {
-      activeStreaksCount++;
+    for (const h of scheduled) {
+      const log = todayLogMap.get(h.id);
+      if (log?.status === 'completed') {
+        completed++;
+      } else if (!log) {
+        pending++;
+      } else if (log?.status === 'failed' || log?.status === 'missed') {
+        failed++;
+      }
     }
-    if (streak.longestStreak > allTimeLongestStreak) {
-      allTimeLongestStreak = streak.longestStreak;
+
+    const percentage =
+      scheduled.length > 0 ? Math.round((completed / scheduled.length) * 100) : 0;
+
+    let activeStreaks = 0;
+    let longestStreak = 0;
+
+    for (const [, streak] of streakMap) {
+      if (streak.currentStreak > 0) {
+        activeStreaks++;
+      }
+      if (streak.longestStreak > longestStreak) {
+        longestStreak = streak.longestStreak;
+      }
     }
-  }
+
+    return {
+      scheduledTodayHabits: scheduled,
+      completedTodayCount: completed,
+      pendingTodayCount: pending,
+      failedTodayCount: failed,
+      completionPercentage: percentage,
+      activeStreaksCount: activeStreaks,
+      allTimeLongestStreak: longestStreak,
+    };
+  }, [habits, todayStr, todayLogMap, streakMap]);
+
+  const {
+    scheduledTodayHabits,
+    completedTodayCount,
+    pendingTodayCount,
+    failedTodayCount,
+    completionPercentage,
+    activeStreaksCount,
+    allTimeLongestStreak,
+  } = todayDisciplineMetrics;
 
   const unclaimedRewards = useMemo(() => {
     return (allAchievements || []).filter((a) => !a.isClaimed);
