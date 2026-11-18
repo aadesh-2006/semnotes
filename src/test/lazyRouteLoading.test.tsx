@@ -107,6 +107,18 @@ describe('Route-Level Lazy Loading & Suspense Integration (AUDIT-PERF-01)', () =
     });
   });
 
+  it('asynchronously resolves and renders MilestonesView on on-demand navigation to /milestones', async () => {
+    render(
+      <MemoryRouter initialEntries={['/milestones']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: /milestones & rewards/i })).toBeInTheDocument();
+    });
+  });
+
   it('asynchronously resolves NotFoundView on unknown route navigation', async () => {
     render(
       <MemoryRouter initialEntries={['/unmapped-realm']}>
@@ -118,5 +130,12 @@ describe('Route-Level Lazy Loading & Suspense Integration (AUDIT-PERF-01)', () =
       expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
       expect(screen.getByText('/unmapped-realm')).toBeInTheDocument();
     });
+  });
+
+  it('renders RouteLoadingFallback while waiting for delayed lazy components', () => {
+    // Verifies the fallback renders with expected status and message
+    const { container } = render(<RouteLoadingFallback />);
+    expect(container.querySelector('[role="status"]')).toBeInTheDocument();
+    expect(screen.getByText('Aligning Protocol')).toBeInTheDocument();
   });
 });
