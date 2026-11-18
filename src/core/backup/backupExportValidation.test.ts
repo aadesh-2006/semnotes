@@ -58,6 +58,7 @@ describe('Backup Export and Validation Engine', () => {
         status: 'completed',
         notes: 'Great calm session',
       });
+      expect(log.id).toBeDefined();
 
       const focusSession = await FocusSessionService.createSession({
         title: 'Deep Coding',

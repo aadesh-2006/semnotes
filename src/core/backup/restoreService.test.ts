@@ -14,42 +14,46 @@ describe('Safe Restore Transaction Service', () => {
   });
 
   const sampleHabitA = {
-    id: 'habit-a',
+    id: 'a0000000-0000-4000-8000-000000000001',
     title: 'Morning Run',
-    schedule: { type: 'daily' as const },
+    description: 'Daily run',
+    category: 'body' as const,
+    type: 'completion' as const,
+    schedule: { frequency: 'daily' as const, selectedDays: [0, 1, 2, 3, 4, 5, 6] },
     targetValue: 5,
     unit: 'km',
-    currentStreak: 3,
-    longestStreak: 7,
+    startDate: '2026-01-01',
+    status: 'active' as const,
     createdAt: '2026-01-01T06:00:00.000Z',
     updatedAt: '2026-01-03T06:00:00.000Z',
-    active: true,
-    archived: false,
+    sortOrder: 0,
   };
 
   const sampleHabitB = {
-    id: 'habit-b',
+    id: 'a0000000-0000-4000-8000-000000000002',
     title: 'Evening Reading',
-    schedule: { type: 'daily' as const },
+    description: 'Read philosophy',
+    category: 'mind' as const,
+    type: 'completion' as const,
+    schedule: { frequency: 'daily' as const, selectedDays: [0, 1, 2, 3, 4, 5, 6] },
     targetValue: 20,
     unit: 'pages',
-    currentStreak: 12,
-    longestStreak: 15,
+    startDate: '2026-01-01',
+    status: 'active' as const,
     createdAt: '2026-01-01T20:00:00.000Z',
     updatedAt: '2026-01-12T20:00:00.000Z',
-    active: true,
-    archived: false,
+    sortOrder: 1,
   };
 
-  describe('captureSafetySnapshot & rollbackSnapshot', () => {
+  describe('captureSafetySnapshot & restoreSafetySnapshot', () => {
     it('captures full database snapshot and can restore it exactly', async () => {
       await db.habits.add(sampleHabitA);
       await db.habitLogs.add({
-        id: 'log-a1',
-        habitId: 'habit-a',
+        id: 'b0000000-0000-4000-8000-000000000001',
+        habitId: sampleHabitA.id,
         date: '2026-01-01',
-        completed: true,
-        value: 5,
+        status: 'completed',
+        numericValue: 5,
         createdAt: '2026-01-01T07:00:00.000Z',
         updatedAt: '2026-01-01T07:00:00.000Z',
       });
@@ -67,7 +71,7 @@ describe('Safe Restore Transaction Service', () => {
       await RestoreTransactionService.restoreSafetySnapshot(snapshot);
       expect(await db.habits.count()).toBe(1);
       expect(await db.habitLogs.count()).toBe(1);
-      const restoredHabit = await db.habits.get('habit-a');
+      const restoredHabit = await db.habits.get(sampleHabitA.id);
       expect(restoredHabit?.title).toBe('Morning Run');
     });
   });
@@ -112,7 +116,7 @@ describe('Safe Restore Transaction Service', () => {
       // Verify DB now only contains Habit B
       const habits = await db.habits.toArray();
       expect(habits).toHaveLength(1);
-      expect(habits[0].id).toBe('habit-b');
+      expect(habits[0].id).toBe(sampleHabitB.id);
       expect(habits[0].title).toBe('Evening Reading');
     });
   });
@@ -122,11 +126,11 @@ describe('Safe Restore Transaction Service', () => {
       // Current DB has Habit A and a log
       await db.habits.add(sampleHabitA);
       await db.habitLogs.add({
-        id: 'log-a1',
-        habitId: 'habit-a',
+        id: 'b0000000-0000-4000-8000-000000000001',
+        habitId: sampleHabitA.id,
         date: '2026-01-01',
-        completed: true,
-        value: 5,
+        status: 'completed',
+        numericValue: 5,
         createdAt: '2026-01-01T07:00:00.000Z',
         updatedAt: '2026-01-01T07:00:00.000Z',
       });
@@ -150,20 +154,20 @@ describe('Safe Restore Transaction Service', () => {
           ],
           habitLogs: [
             {
-              id: 'log-a1-dup',
-              habitId: 'habit-a',
+              id: 'b0000000-0000-4000-8000-000000000002',
+              habitId: sampleHabitA.id,
               date: '2026-01-01', // duplicate date for habit-a
-              completed: true,
-              value: 5,
+              status: 'completed',
+              numericValue: 5,
               createdAt: '2026-01-01T07:00:00.000Z',
               updatedAt: '2026-01-01T07:00:00.000Z',
             },
             {
-              id: 'log-b1',
-              habitId: 'habit-b',
+              id: 'b0000000-0000-4000-8000-000000000003',
+              habitId: sampleHabitB.id,
               date: '2026-01-01', // valid new log
-              completed: true,
-              value: 20,
+              status: 'completed',
+              numericValue: 20,
               createdAt: '2026-01-01T21:00:00.000Z',
               updatedAt: '2026-01-01T21:00:00.000Z',
             },
@@ -183,13 +187,13 @@ describe('Safe Restore Transaction Service', () => {
       const result = await RestoreTransactionService.restoreMerge(backupToMerge);
       expect(result.success).toBe(true);
       expect(result.mode).toBe('merge');
-      expect(result.insertedCount).toBe(2); // Habit B and log-b1
-      expect(result.skippedCount).toBe(2);  // Habit A and log-a1-dup
+      expect(result.insertedCount).toBe(2); // Habit B and log-b3
+      expect(result.skippedCount).toBe(2);  // Habit A and duplicate date log
 
       // DB now has both habits
       const habits = await db.habits.toArray();
       expect(habits).toHaveLength(2);
-      expect(habits.map((h) => h.id).sort()).toEqual(['habit-a', 'habit-b']);
+      expect(habits.map((h) => h.id).sort()).toEqual([sampleHabitA.id, sampleHabitB.id].sort());
 
       // DB now has 2 logs
       const logs = await db.habitLogs.toArray();
@@ -199,9 +203,11 @@ describe('Safe Restore Transaction Service', () => {
     it('deduplicates morning intentions and evening debriefs by date', async () => {
       // Existing morning intention for 2026-01-01
       await db.morningIntentions.add({
-        id: 'intent-1',
+        id: 'c0000000-0000-4000-8000-000000000001',
         date: '2026-01-01',
-        primaryFocus: 'Finish Chapter 4',
+        primaryIntention: 'Finish Chapter 4',
+        keyCommitment: 'High focus',
+        linkedHabitIds: [],
         createdAt: '2026-01-01T06:00:00.000Z',
         updatedAt: '2026-01-01T06:00:00.000Z',
       });
@@ -226,16 +232,20 @@ describe('Safe Restore Transaction Service', () => {
           urgeLogs: [],
           morningIntentions: [
             {
-              id: 'intent-different-id',
+              id: 'c0000000-0000-4000-8000-000000000002',
               date: '2026-01-01', // same date!
-              primaryFocus: 'Conflicting intention',
+              primaryIntention: 'Conflicting intention',
+              keyCommitment: 'Other commitment',
+              linkedHabitIds: [],
               createdAt: '2026-01-01T06:30:00.000Z',
               updatedAt: '2026-01-01T06:30:00.000Z',
             },
             {
-              id: 'intent-2',
+              id: 'c0000000-0000-4000-8000-000000000003',
               date: '2026-01-02', // new date
-              primaryFocus: 'Review flashcards',
+              primaryIntention: 'Review flashcards',
+              keyCommitment: '30 minutes',
+              linkedHabitIds: [],
               createdAt: '2026-01-02T06:00:00.000Z',
               updatedAt: '2026-01-02T06:00:00.000Z',
             },
@@ -253,8 +263,8 @@ describe('Safe Restore Transaction Service', () => {
 
       const allIntentions = await db.morningIntentions.toArray();
       expect(allIntentions).toHaveLength(2);
-      expect(allIntentions.find((i) => i.date === '2026-01-01')?.primaryFocus).toBe('Finish Chapter 4');
-      expect(allIntentions.find((i) => i.date === '2026-01-02')?.primaryFocus).toBe('Review flashcards');
+      expect(allIntentions.find((i) => i.date === '2026-01-01')?.primaryIntention).toBe('Finish Chapter 4');
+      expect(allIntentions.find((i) => i.date === '2026-01-02')?.primaryIntention).toBe('Review flashcards');
     });
   });
 });
