@@ -162,7 +162,7 @@ describe('UrgeDiagnosticService', () => {
   describe('Domain Invariant: Separation of Urges from Habit Streaks', () => {
     it('ensures recording an urge does NOT create a habit log or reset streaks', async () => {
       const dummyHabit: Habit = {
-        id: '11111111-2222-3333-4444-555555555555',
+        id: '11111111-2222-4333-8444-555555555555',
         title: 'Digital Purity',
         description: 'Sovereign discipline',
         category: 'abstinence',
