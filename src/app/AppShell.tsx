@@ -1,14 +1,15 @@
 import { useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
-import { NAVIGATION_ROUTES, type RouteId } from './routes';
+import { NAVIGATION_ROUTES, getRouteIdFromPathname, type RouteId } from './routes';
 import { formatFriendlyDate, cn } from '../core/utils';
 import { Menu, X, Plus, HardDrive, Compass } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 
 interface AppShellProps {
-  currentRoute: RouteId;
-  onRouteChange: (route: RouteId) => void;
+  currentRoute?: RouteId;
+  onRouteChange?: (route: RouteId) => void;
   onQuickAction?: () => void;
   children: React.ReactNode;
 }
@@ -21,12 +22,17 @@ export function AppShell({
 }: AppShellProps) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
-  const activeRouteConfig = NAVIGATION_ROUTES.find((r) => r.id === currentRoute);
+  // URL location is the primary source of truth; falls back to currentRoute or 'dashboard'
+  const activeRouteId = getRouteIdFromPathname(location.pathname) || currentRoute;
+  const activeRouteConfig = activeRouteId ? NAVIGATION_ROUTES.find((r) => r.id === activeRouteId) : null;
   const todayFormatted = formatFriendlyDate(new Date());
 
   const handleMobileRouteSelect = (route: RouteId) => {
-    onRouteChange(route);
+    if (onRouteChange) {
+      onRouteChange(route);
+    }
     setIsMobileMenuOpen(false);
   };
 
@@ -34,7 +40,7 @@ export function AppShell({
     <div className="min-h-screen bg-obsidian-950 flex flex-col md:flex-row text-slate-100">
       {/* Desktop Sidebar */}
       <Sidebar
-        currentRoute={currentRoute}
+        currentRoute={activeRouteId || 'dashboard'}
         onRouteChange={onRouteChange}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -57,7 +63,7 @@ export function AppShell({
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-slate-100">
-                  {activeRouteConfig?.label || 'Command Center'}
+                  {activeRouteConfig ? activeRouteConfig.label : 'SEMNÓTĒS'}
                 </h1>
                 <Badge variant="gold-subtle" size="sm" className="hidden sm:inline-flex">
                   V1.0
@@ -118,19 +124,21 @@ export function AppShell({
               </button>
             </div>
 
-            <div className="flex-1 py-4 space-y-1 overflow-y-auto">
+            <nav aria-label="Mobile full navigation" className="flex-1 py-4 space-y-1 overflow-y-auto">
               <span className="text-[10px] uppercase font-semibold text-slate-400 px-3 pb-2 block">
                 Modules
               </span>
               {NAVIGATION_ROUTES.map((route) => {
                 const Icon = route.icon;
-                const isActive = currentRoute === route.id;
+                const isActive = activeRouteId === route.id;
                 return (
-                  <button
+                  <NavLink
                     key={route.id}
+                    to={route.path}
                     onClick={() => handleMobileRouteSelect(route.id)}
+                    aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400',
                       isActive
                         ? 'bg-gold-500/15 text-gold-300 border-l-2 border-gold-400 font-semibold'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
@@ -138,10 +146,10 @@ export function AppShell({
                   >
                     <Icon className={cn('w-4 h-4', isActive ? 'text-gold-400' : 'text-slate-400')} />
                     <span>{route.label}</span>
-                  </button>
+                  </NavLink>
                 );
               })}
-            </div>
+            </nav>
 
             <div className="pt-4 border-t border-obsidian-750 text-xs text-slate-400 flex flex-col gap-1">
               <span className="text-gold-400 font-medium">Dignity &bull; Self-respect &bull; Discipline</span>
@@ -152,7 +160,10 @@ export function AppShell({
       )}
 
       {/* Mobile Bottom Navigation Bar (High frequency shortcuts) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-obsidian-900/95 backdrop-blur-md border-t border-obsidian-750 px-3 flex items-center justify-around z-30">
+      <nav
+        aria-label="Mobile quick shortcuts"
+        className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-obsidian-900/95 backdrop-blur-md border-t border-obsidian-750 px-3 flex items-center justify-around z-30"
+      >
         {[
           NAVIGATION_ROUTES[0], // Dashboard
           NAVIGATION_ROUTES[1], // Streaks
@@ -160,24 +171,27 @@ export function AppShell({
           NAVIGATION_ROUTES[3], // Journal
         ].map((route) => {
           const Icon = route.icon;
-          const isActive = currentRoute === route.id;
+          const isActive = activeRouteId === route.id;
           return (
-            <button
+            <NavLink
               key={route.id}
-              onClick={() => onRouteChange(route.id)}
+              to={route.path}
+              onClick={() => onRouteChange?.(route.id)}
+              aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium transition-colors',
+                'flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400',
                 isActive ? 'text-gold-300 font-semibold' : 'text-slate-400 hover:text-slate-200'
               )}
             >
               <Icon className={cn('w-5 h-5 mb-0.5', isActive ? 'text-gold-400' : 'text-slate-400')} />
               <span>{route.shortLabel}</span>
-            </button>
+            </NavLink>
           );
         })}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-200"
+          className="flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400"
+          aria-label="Open navigation modules drawer"
         >
           <Compass className="w-5 h-5 mb-0.5 text-slate-400" />
           <span>More</span>
