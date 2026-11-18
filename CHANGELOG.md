@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-alpha.9] — 2026-11-18 (Milestone 9: Data Management, Backup, Restore & Optional Encrypted Sync)
+
+### Added
+- **Complete Database Backup Export System:**
+  - `BackupExportService`: Extracts records from all 11 Dexie IndexedDB v5 tables (`habits`, `habitLogs`, `auditRecords`, `milestones`, `achievements`, `journalEntries`, `urgeLogs`, `morningIntentions`, `eveningDebriefs`, `focusSessions`, `userSettings`) and Focus preferences.
+  - `BackupIntegrityService`: Deterministic key-canonicalized JSON serialization and SHA-256 cryptographic checksum calculation using native Web Crypto API.
+  - Manifest includes `app: 'semnotes'`, `backupVersion: '1.0'`, `dbVersion: 5`, ISO 8601 timestamps, table record counts, and data checksum.
+- **Pre-Import Backup Validation Service:**
+  - `BackupValidationService`: Multi-stage pre-import verification ensuring corrupted or invalid data never touches IndexedDB:
+    1. Syntax checking and JSON structure.
+    2. Application identifier and major version compatibility.
+    3. Cryptographic SHA-256 data checksum verification.
+    4. Table-by-table schema validation using Zod.
+    5. Primary key ID uniqueness enforcement.
+    6. Foreign-key-like reference integrity auditing (e.g. `habitId` references in logs, focus sessions, journal entries, and milestones).
+  - Produces structured `BackupValidationReport` detailing validity, errors, warnings, and issue counts.
+- **Safe Transactional Restore Engine:**
+  - `RestoreTransactionService`:
+    - **In-Memory Safety Snapshot**: Captures a complete database snapshot before any restore operation, guaranteeing zero data loss via atomic rollback if write operations fail.
+    - **Mode 1: Replace**: Atomically purges existing tables and restores backup records with rollback protection.
+    - **Mode 2: Merge**: Additive restoration preserving existing local records. Deduplicates by ID, compound keys (`[habitId+date]`, `[habitId+thresholdDays]`), and unique dates (intentions/debriefs).
+- **RFC 4180 Compliant Category-Specific CSV Exports:**
+  - `CsvExportService`: Export clean spreadsheets for Habits, Check-Ins, Focus Sessions, Milestones/Rewards, and Intentions & Reflections.
+  - Standard RFC 4180 quote escaping (`""`), newline handling, and UTF-8 Byte Order Mark (`\uFEFF`) for seamless display in Microsoft Excel, Google Sheets, and Apple Numbers.
+- **Client-Side Zero-Knowledge Encryption:**
+  - `EncryptionService`: Military-grade Web Crypto API AES-256-GCM authenticated encryption paired with PBKDF2 key derivation (100,000 iterations of SHA-256, 16-byte cryptographically random salt, 12-byte random IV).
+  - Plaintext and passwords never touch storage or logs. Strict rejection on wrong passwords (`CryptoDecryptionError`) or tampered ciphertexts.
+- **Synchronization Provider Abstraction & Conflict Engine:**
+  - `SyncProvider` interface decoupling sync logic from cloud storage implementations.
+  - `MockCloudSyncProvider`: In-memory remote simulation provider supporting multi-device emulation, latency simulation, and network failure testing.
+  - `SupabaseSyncProvider`: Production adapter skeleton for cloud databases or buckets.
+  - `SyncService`: Manages encrypted sync cycles, version tracking, conflict detection (`remoteVersion > localVersion`), and three interactive resolution strategies: `useRemote`, `useLocal`, and `merge`.
+- **Sovereign Data Management Workspace in Settings:**
+  - `DataManagementView`: Tabbed layout hosting `BackupExportPanel`, `BackupRestorePanel`, `BackupValidationModal`, `CSVExportPanel`, and `SyncSettingsPanel`.
+  - Live table record counters, password-protected export options, drag-and-drop file upload, interactive validation reports, mode selection, and conflict resolution dialogs.
+- **Automated Test Suite Expansion:**
+  - Added 35 comprehensive unit and workflow integration tests across `backupExportValidation.test.ts`, `restoreService.test.ts`, `csvExportService.test.ts`, `encryptionService.test.ts`, `syncService.test.ts`, and `dataManagementWorkflow.test.ts`.
+  - Platform-wide test suite passes 100% (222/222 tests passing across 25 test suites).
+
+---
+
 ## [1.0.0-alpha.8] — 2026-11-18 (Milestone 8: Focus Mode & Custom Pomodoro Engine)
 
 ### Added

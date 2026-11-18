@@ -269,4 +269,41 @@ For any evaluation timestamp $T_{\text{now}}$:
 - **Zero Telemetry / Zero External AI Transmission:** No third-party analytical SDKs, cookies, or remote LLM transcription APIs. Private reflections never leave the user's device.
 - **Zero Console Data Leaks:** Sensitive journal text, intentions, and urge logs are never output to browser debugging consoles.
 - **Command Center Privacy Firewall:** Overview dashboards display only abstract completion badges (e.g. `AM Done`, `PM Done`) and anonymized action triggers; private text is never exposed on common screens.
-- **Client-Side Encryption Roadmap (M9):** Web Crypto API AES-GCM 256-bit encryption with PBKDF2/Argon2 password-derived keys will be implemented before optional multi-device cloud synchronization. Current storage is local client storage; no false security claims are made.
+- **Client-Side Zero-Knowledge Encryption (M9):** Web Crypto API AES-256-GCM authenticated encryption with PBKDF2 key derivation (100,000 iterations, SHA-256, 16-byte cryptographically random salt, 12-byte random IV). Plaintext and passwords never touch storage or logs.
+
+---
+
+## 10. Data Management, Backup & Synchronization Architecture (M9)
+
+### A. Backup Envelope & Canonical Checksum
+Backups are structured versioned JSON documents (`app: 'semnotes'`, `backupVersion: '1.0'`, `dbVersion: 5`).
+Data integrity is verified using key-canonicalized recursive JSON serialization and SHA-256 cryptographic digests computed via `crypto.subtle.digest`.
+
+### B. Pre-Import Validation Pipeline
+Before any restore write operation is permitted, `BackupValidationService` executes an exhaustive validation pipeline:
+1. Syntax checking & object structure.
+2. Manifest header & version compatibility.
+3. Cryptographic SHA-256 data checksum verification.
+4. Table-by-table schema validation via Zod schemas.
+5. Primary key ID uniqueness verification.
+6. Foreign-key reference integrity auditing across related tables.
+
+### C. Safe Restore Transaction Engine
+1. **Safety Snapshot & Rollback:**
+   Before any restore operation begins, an in-memory safety snapshot is captured. If any database transaction step fails, the previous database state is rolled back cleanly.
+2. **Mode 1: Replace:**
+   Atomic purge of existing tables and bulk write of backup records with safety snapshot protection.
+3. **Mode 2: Merge:**
+   Additive restoration. Skips existing primary keys, deduplicates compound keys (`[habitId+date]`, `[habitId+thresholdDays]`), and preserves unique reflection dates (`morningIntentions`, `eveningDebriefs`).
+
+### D. Category-Specific CSV Exports
+Strict RFC 4180 compliant CSV generator with UTF-8 Byte Order Mark (`\uFEFF`) to prevent character encoding issues in spreadsheet applications. Specialized exports for Habits, Check-Ins, Focus Sessions, Milestones/Rewards, and Intentions & Reflections.
+
+### E. Zero-Knowledge Synchronization & Conflict Resolution
+- Abstract `SyncProvider` contract decoupling synchronization coordination from cloud transport.
+- Encrypted envelope transmission (`AES-256-GCM`, base64 encoded salt, IV, and ciphertext with embedded auth tag).
+- Version-based conflict detection (`remoteVersion > localVersion`).
+- Three deterministic conflict resolution modes:
+  - `useRemote`: Decrypts and replaces local DB with remote version.
+  - `useLocal`: Forces local state to remote with incremented version.
+  - `merge`: Decrypts remote, merges into local DB, and re-uploads unified dataset.

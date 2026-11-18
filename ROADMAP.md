@@ -133,9 +133,16 @@
 - [x] Command Center integration with active timer preview and daily focus output metrics.
 - [x] Full test suite (187/187 tests passing across 19 test suites).
 
-### M9 — Storage & Synchronisation
-- [ ] Complete database backup export (JSON) and restore (import).
-- [ ] Optional client-side encrypted synchronization.
+### M9 — Data Management, Backup, Restore & Encrypted Sync (Completed)
+- [x] Complete database backup export (JSON v1.0) extracting all 11 Dexie tables + user preferences with SHA-256 integrity checksum (`BackupExportService`, `BackupIntegrityService`).
+- [x] Pre-import backup validation service checking JSON syntax, application compatibility, version support, checksums, Zod table schemas, ID uniqueness, and foreign-key reference integrity (`BackupValidationService`).
+- [x] Safe restore transaction engine with Mode 1 (Replace) featuring in-memory safety snapshot rollback on error, and Mode 2 (Merge) with deduplication across primary and compound keys (`RestoreTransactionService`).
+- [x] Category-specific CSV exports compliant with RFC 4180 and UTF-8 BOM for Habits, Check-Ins, Focus Sessions, Milestones/Rewards, and Reflections (`CsvExportService`).
+- [x] Client-side zero-knowledge encryption using Web Crypto API PBKDF2 (100,000 iterations, SHA-256, 16-byte salt, 12-byte IV) and AES-256-GCM (`EncryptionService`).
+- [x] Synchronization provider abstraction with `MockCloudSyncProvider` (sandbox simulation) and `SupabaseSyncProvider` adapter skeleton (`SyncProvider`).
+- [x] Conflict detection and interactive resolution strategies (`useRemote`, `useLocal`, `merge`) in `SyncService`.
+- [x] Full-featured Sovereign Data Management workspace in Settings (`BackupExportPanel`, `BackupRestorePanel`, `BackupValidationModal`, `CSVExportPanel`, `SyncSettingsPanel`, `DataManagementView`).
+- [x] Comprehensive automated test suite with 35 new tests across 5 test suites (222/222 passing platform-wide).
 
 ### M10 — Quality Assurance & Release Polish
 - [ ] Playwright E2E verification of critical check-in and recovery flows.
