@@ -99,6 +99,7 @@ describe('Data Integrity, Deletion Invariants & Backup Release Verification (Sec
       thresholdDays: 7,
       rewardTitle: 'Mechanical Keyboard',
       isEnabled: true,
+      sortOrder: 0,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z'
     };
@@ -111,27 +112,29 @@ describe('Data Integrity, Deletion Invariants & Backup Release Verification (Sec
       thresholdDays: 7,
       streakStartDate: '2026-01-01',
       achievedDate: '2026-01-07',
+      achievedStreakLength: 7,
       isClaimed: true,
       rewardTitle: milestone.rewardTitle,
-      createdAt: '2026-01-07T00:00:00.000Z'
+      rewardDescription: '',
+      createdAt: '2026-01-07T00:00:00.000Z',
+      updatedAt: '2026-01-07T00:00:00.000Z'
     };
     await db.achievements.add(achievement);
 
     const focusSession: FocusSession = {
-      id: 'fs-001',
-      habitId: habit.id,
+      id: '99999999-8888-4777-a666-555555555555',
       linkedHabitId: habit.id,
       title: 'Algorithms Sprint',
-      sessionMode: 'continuous',
-      targetDurationMinutes: 60,
+      sessionMode: 'custom',
+      plannedDurationMinutes: 60,
       actualDurationSeconds: 3600,
       breakDurationSeconds: 0,
-      completedIntervals: 1,
       startedAt: '2026-01-07T10:00:00.000Z',
       endedAt: '2026-01-07T11:00:00.000Z',
       status: 'completed',
       date: '2026-01-07',
-      createdAt: '2026-01-07T10:00:00.000Z'
+      createdAt: '2026-01-07T10:00:00.000Z',
+      updatedAt: '2026-01-07T11:00:00.000Z'
     };
     await db.focusSessions.add(focusSession);
 
@@ -197,10 +200,10 @@ describe('Data Integrity, Deletion Invariants & Backup Release Verification (Sec
     expect(await db.habits.get(habit.id)).toBeDefined();
 
     // 10. Legacy Encrypted Backup (100,000 iterations v1.0 fixture)
-    const legacyDecrypted = await EncryptionService.decryptPayload(
+    const legacyDecrypted = (await EncryptionService.decryptPayload(
       LEGACY_ENCRYPTED_BACKUP_FIXTURE,
       LEGACY_FIXTURE_PASSPHRASE
-    );
+    )) as SemnotesBackupPayload;
     expect(legacyDecrypted).toBeDefined();
     expect(legacyDecrypted.data.habits.length).toBeGreaterThan(0);
 
@@ -213,7 +216,10 @@ describe('Data Integrity, Deletion Invariants & Backup Release Verification (Sec
     expect(newEnvelope.formatVersion).toBe('2.0');
     expect(newEnvelope.kdfParams.iterations).toBe(600000);
 
-    const modernDecrypted = await EncryptionService.decryptPayload(newEnvelope, 'ModernPassphrase2026!');
+    const modernDecrypted = (await EncryptionService.decryptPayload(
+      newEnvelope,
+      'ModernPassphrase2026!'
+    )) as SemnotesBackupPayload;
     const modernRestore = await RestoreTransactionService.restoreReplace(modernDecrypted);
     expect(modernRestore.success).toBe(true);
     expect(await db.habits.get(habit.id)).toBeDefined();
@@ -231,11 +237,13 @@ describe('Data Integrity, Deletion Invariants & Backup Release Verification (Sec
     const remoteHabit: Habit = {
       id: '11111111-2222-4333-8444-555555555555',
       title: 'Remote Habit',
+      description: 'Remote habit description',
       category: 'craft',
       type: 'completion',
       schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
       startDate: '2026-01-01',
       status: 'active',
+      sortOrder: 0,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z'
     };

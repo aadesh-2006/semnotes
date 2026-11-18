@@ -1,6 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { Modal } from '../components/ui/modal';
 import { AppShell } from '../app/AppShell';
 import { HabitFormModal } from '../components/modals/HabitFormModal';
@@ -41,7 +40,7 @@ describe('WCAG 2.1 AA Keyboard Navigation & Focus Management (AUDIT-A11Y-01)', (
     expect(dialog).toHaveAttribute('aria-labelledby');
 
     const closeButton = screen.getByRole('button', { name: /close dialog/i });
-    const actionA = screen.getByRole('button', { name: /action a/i });
+    expect(screen.getByRole('button', { name: /action a/i })).toBeInTheDocument();
     const actionB = screen.getByRole('button', { name: /action b/i });
 
     // Focus last element (Action B) and press Tab -> should wrap to close button
@@ -170,7 +169,7 @@ describe('WCAG 2.1 AA Keyboard Navigation & Focus Management (AUDIT-A11Y-01)', (
 
     const abstinenceRadio = within(radioGroup).getByRole('radio', { name: /abstinence/i });
     const completionRadio = within(radioGroup).getByRole('radio', { name: /completion/i });
-    const quantitativeRadio = within(radioGroup).getByRole('radio', { name: /quantitative/i });
+    expect(within(radioGroup).getByRole('radio', { name: /quantitative/i })).toBeInTheDocument();
 
     expect(abstinenceRadio).toHaveAttribute('aria-checked', 'true');
     expect(completionRadio).toHaveAttribute('aria-checked', 'false');
@@ -185,11 +184,13 @@ describe('WCAG 2.1 AA Keyboard Navigation & Focus Management (AUDIT-A11Y-01)', (
     const sampleHabit: Habit = {
       id: 'c52cf460-2303-4f96-848e-d98c25fdfc51',
       title: 'Digital Purity',
+      description: 'Avoid distraction',
       category: 'abstinence',
       type: 'abstinence',
       schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
       startDate: '2026-01-01',
       status: 'active',
+      sortOrder: 0,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z'
     };

@@ -11,28 +11,20 @@ import { Sidebar } from '../app/Sidebar';
 import { AppShell } from '../app/AppShell';
 import { RootErrorBoundary } from '../components/errors/RootErrorBoundary';
 import { NotFoundView } from '../features/not-found/NotFoundView';
-import { Modal } from '../components/ui/modal';
 
 // Modals & Forms
 import { HabitFormModal } from '../components/modals/HabitFormModal';
 import { CheckInModal } from '../components/modals/CheckInModal';
-import { MilestoneFormModal } from '../components/modals/MilestoneFormModal';
 import { ClaimRewardModal } from '../components/modals/ClaimRewardModal';
-import { QuickActionModal } from '../components/modals/QuickActionModal';
 import { BackupValidationModal } from '../features/data-management/BackupValidationModal';
-import { BackupExportPanel } from '../features/data-management/BackupExportPanel';
-import { BackupRestorePanel } from '../features/data-management/BackupRestorePanel';
 
 // Views
 import { CommandCenter } from '../features/command-center/CommandCenter';
-import { StreaksView } from '../features/streaks/StreaksView';
 import { HabitDetailView } from '../features/streaks/HabitDetailView';
 import { CalendarView } from '../features/calendar/CalendarView';
 import { JournalView } from '../features/journal/JournalView';
 import { AnalyticsView } from '../features/analytics/AnalyticsView';
 import { FocusView } from '../features/focus/FocusView';
-import { FocusTimer } from '../features/focus/FocusTimer';
-import { MilestonesView } from '../features/milestones/MilestonesView';
 import { SettingsView } from '../features/settings/SettingsView';
 
 expect.extend(matchers);
@@ -46,6 +38,7 @@ const sampleHabit: Habit = {
   schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
   startDate: '2026-01-01',
   status: 'active',
+  sortOrder: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -59,6 +52,7 @@ const sampleMilestone: Milestone = {
   rewardCategory: 'Personal Treat',
   personalNote: 'Discipline compounds daily',
   isEnabled: true,
+  sortOrder: 0,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z'
 };
@@ -70,12 +64,14 @@ const sampleAchievement: Achievement = {
   thresholdDays: 7,
   streakStartDate: '2026-01-01',
   achievedDate: '2026-01-07',
+  achievedStreakLength: 7,
   isClaimed: false,
   rewardTitle: sampleMilestone.rewardTitle,
-  rewardDescription: sampleMilestone.rewardDescription,
+  rewardDescription: sampleMilestone.rewardDescription || '',
   rewardCategory: sampleMilestone.rewardCategory,
   personalNote: sampleMilestone.personalNote,
-  createdAt: '2026-01-07T00:00:00.000Z'
+  createdAt: '2026-01-07T00:00:00.000Z',
+  updatedAt: '2026-01-07T00:00:00.000Z'
 };
 
 beforeAll(() => {
@@ -233,6 +229,7 @@ describe('Automated WCAG 2.1 AA Compliance Suite across 15 Subsystems (AUDIT-A11
 
   it('13. Backup validation & restore modal accessibility: zero automated WCAG violations', async () => {
     const mockReport = {
+      app: 'semnotes',
       isValid: true,
       backupVersion: '2.0',
       dbVersion: 6,
@@ -241,7 +238,9 @@ describe('Automated WCAG 2.1 AA Compliance Suite across 15 Subsystems (AUDIT-A11
       recordCounts: { habits: 1, habitLogs: 0, focusSessions: 0 },
       totalRecords: 1,
       errors: [],
-      warnings: []
+      warnings: [],
+      tableIssues: [],
+      referenceIssues: []
     };
 
     const { container } = render(
@@ -257,8 +256,9 @@ describe('Automated WCAG 2.1 AA Compliance Suite across 15 Subsystems (AUDIT-A11
   });
 
   it('14. Root Error Boundary fallback accessibility: zero automated WCAG violations', async () => {
-    function Broken(): JSX.Element {
+    function Broken() {
       throw new Error('Test fault');
+      return null;
     }
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
