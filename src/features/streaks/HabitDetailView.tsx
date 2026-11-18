@@ -57,21 +57,21 @@ export function HabitDetailView({
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [claimingAchievement, setClaimingAchievement] = useState<Achievement | null>(null);
 
-  const habit = useLiveQuery(() => db.habits.get(habitId), [habitId]);
+  const habit = useLiveQuery(() => (habitId ? db.habits.get(habitId) : undefined), [habitId]);
   const logs = useLiveQuery(
-    () => db.habitLogs.where('habitId').equals(habitId).reverse().sortBy('date'),
+    () => (habitId ? db.habitLogs.where('habitId').equals(habitId).reverse().sortBy('date') : []),
     [habitId]
   );
   const auditRecords = useLiveQuery(
-    () => db.auditRecords.where('habitId').equals(habitId).reverse().sortBy('timestamp'),
+    () => (habitId ? db.auditRecords.where('habitId').equals(habitId).reverse().sortBy('timestamp') : []),
     [habitId]
   );
   const milestones = useLiveQuery(
-    () => db.milestones.where('habitId').equals(habitId).sortBy('thresholdDays'),
+    () => (habitId ? db.milestones.where('habitId').equals(habitId).sortBy('thresholdDays') : []),
     [habitId]
   );
   const achievements = useLiveQuery(
-    () => db.achievements.where('habitId').equals(habitId).toArray(),
+    () => (habitId ? db.achievements.where('habitId').equals(habitId).toArray() : []),
     [habitId]
   );
 

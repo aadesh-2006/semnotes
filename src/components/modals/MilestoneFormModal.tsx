@@ -101,17 +101,12 @@ export function MilestoneFormModal({
         });
       }
 
-      // Automatically evaluate achievements immediately so any qualified streak unlocks it
-      try {
-        await AchievementEngine.evaluateAndRecordAchievements(habitId);
-      } catch {
-        // Non-blocking
-      }
+      await AchievementEngine.evaluateHabitMilestones(habitId);
 
       onSuccess(saved);
       onClose();
-    } catch (err) {
-      setError((err as Error).message || 'Failed to save milestone.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to establish milestone');
     } finally {
       setIsSubmitting(false);
     }
@@ -123,8 +118,8 @@ export function MilestoneFormModal({
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <Award className="w-5 h-5 text-gold-400" />
-          <span>{isEditing ? 'Edit Milestone Reward' : 'Configure Milestone Reward'}</span>
+          <Award className="w-5 h-5 text-gold-400" aria-hidden="true" />
+          <span>{isEditing ? 'Edit Milestone & Reward' : 'New Milestone & Reward'}</span>
         </div>
       }
       description={
@@ -133,31 +128,38 @@ export function MilestoneFormModal({
           : 'Define an independent streak milestone and celebratory reward.'
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {error && (
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+          <div
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-2.5 p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Threshold Days */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
-            Streak Threshold (Consecutive Days) <span className="text-gold-400">*</span>
+          <label htmlFor="milestone-threshold" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+            Streak Threshold (Consecutive Days) <span className="text-gold-400" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <div className="relative">
             <input
+              id="milestone-threshold"
               type="number"
               min="1"
               step="1"
               required
+              aria-required="true"
               value={thresholdDays}
               onChange={(e) => setThresholdDays(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
               placeholder="e.g. 7, 14, 30, 90"
-              className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 font-mono"
+              className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400 font-mono"
             />
-            <span className="absolute right-3.5 top-2.5 text-xs text-charcoal-400 font-sans pointer-events-none">
+            <span className="absolute right-3.5 top-2.5 text-xs text-charcoal-400 font-sans pointer-events-none" aria-hidden="true">
               days
             </span>
           </div>
@@ -168,31 +170,34 @@ export function MilestoneFormModal({
 
         {/* Reward Name */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
-            Reward Title <span className="text-gold-400">*</span>
+          <label htmlFor="milestone-reward-title" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+            Reward Title <span className="text-gold-400" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <input
+            id="milestone-reward-title"
             type="text"
             required
+            aria-required="true"
             value={rewardTitle}
             onChange={(e) => setRewardTitle(e.target.value)}
             placeholder="e.g. Specialty Coffee Tasting, New Hardcover Book, Rest Day"
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400"
           />
         </div>
 
         {/* Reward Category & Quick Select */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+          <label htmlFor="milestone-reward-category" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
             Reward Category
           </label>
-          <div className="flex flex-wrap gap-1.5 mb-2">
+          <div role="group" aria-label="Preset Reward Categories" className="flex flex-wrap gap-1.5 mb-2">
             {PRESET_CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 type="button"
                 onClick={() => setRewardCategory(cat)}
-                className={`text-[11px] px-2.5 py-1 rounded-md transition-all ${
+                className={`text-[11px] px-2.5 py-1 rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
                   rewardCategory === cat
                     ? 'bg-gold-500/20 text-gold-300 border border-gold-500/40 font-medium'
                     : 'bg-charcoal-900/60 text-charcoal-400 border border-charcoal-800 hover:text-charcoal-200'
@@ -203,39 +208,42 @@ export function MilestoneFormModal({
             ))}
           </div>
           <input
+            id="milestone-reward-category"
             type="text"
             value={rewardCategory}
             onChange={(e) => setRewardCategory(e.target.value)}
             placeholder="Custom Category"
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400"
           />
         </div>
 
         {/* Reward Description */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+          <label htmlFor="milestone-reward-desc" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
             Reward Details (Optional)
           </label>
           <textarea
+            id="milestone-reward-desc"
             rows={2}
             value={rewardDescription}
             onChange={(e) => setRewardDescription(e.target.value)}
             placeholder="What does this reward entail? Specific treats, experiences, or gear."
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 resize-none"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400 resize-none"
           />
         </div>
 
         {/* Personal Note */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+          <label htmlFor="milestone-personal-note" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
             Personal Reflection Note (Optional)
           </label>
           <textarea
+            id="milestone-personal-note"
             rows={2}
             value={personalNote}
             onChange={(e) => setPersonalNote(e.target.value)}
             placeholder="Why does reaching this milestone matter to you personally?"
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 resize-none"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400 resize-none"
           />
         </div>
 
@@ -249,8 +257,11 @@ export function MilestoneFormModal({
           </div>
           <button
             type="button"
+            role="switch"
+            aria-checked={isEnabled}
+            aria-label="Toggle active milestone status"
             onClick={() => setIsEnabled(!isEnabled)}
-            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 ${
               isEnabled ? 'bg-gold-500' : 'bg-charcoal-700'
             }`}
           >
@@ -268,8 +279,8 @@ export function MilestoneFormModal({
             Cancel
           </Button>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            <Sparkles className="w-4 h-4 mr-1.5 text-obsidian-950" />
-            {isSubmitting ? 'Saving...' : isEditing ? 'Update Milestone' : 'Save Milestone'}
+            <Sparkles className="w-4 h-4 mr-1.5 text-obsidian-950" aria-hidden="true" />
+            {isSubmitting ? 'Saving...' : isEditing ? 'Update Milestone' : 'Establish Milestone'}
           </Button>
         </div>
       </form>

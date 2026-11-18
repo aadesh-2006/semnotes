@@ -102,16 +102,20 @@ export function CheckInModal({
       description={`Commitment: ${habit.title}`}
       maxWidth="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         {error && (
-          <div className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-300 text-xs">
+          <div
+            role="alert"
+            aria-live="polite"
+            className="p-3 rounded-lg bg-red-950/60 border border-red-800 text-red-300 text-xs"
+          >
             {error}
           </div>
         )}
 
         {isEditingExisting && (
           <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/50 flex items-start gap-2.5 text-xs text-amber-300">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" />
+            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-400" aria-hidden="true" />
             <div>
               <span className="font-semibold block">Entry already exists for this date.</span>
               <span>Modifications will be logged in the permanent audit trail.</span>
@@ -121,85 +125,93 @@ export function CheckInModal({
 
         {/* Abstinence Mode */}
         {isAbstinence && (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
               Sovereign Status
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+            </legend>
+            <div role="radiogroup" aria-label="Sovereign Status" className="grid grid-cols-2 gap-3">
               <button
                 type="button"
+                role="radio"
+                aria-checked={status === 'completed'}
                 onClick={() => setStatus('completed')}
-                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 ${
                   status === 'completed'
                     ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300 shadow-[0_0_15px_rgba(46,125,78,0.25)]'
                     : 'bg-obsidian-900 border-obsidian-750 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
-                <ShieldCheck className="w-6 h-6 text-emerald-400" />
+                <ShieldCheck className="w-6 h-6 text-emerald-400" aria-hidden="true" />
                 <span className="font-bold text-sm">Maintained Standard</span>
                 <span className="text-[11px] text-slate-400 text-center">Clean & resolute today</span>
               </button>
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={status === 'failed'}
                 onClick={() => setStatus('failed')}
-                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 ${
                   status === 'failed'
                     ? 'bg-red-950/60 border-red-500/80 text-red-300 shadow-[0_0_15px_rgba(168,58,58,0.25)]'
                     : 'bg-obsidian-900 border-obsidian-750 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
-                <ShieldAlert className="w-6 h-6 text-red-400" />
+                <ShieldAlert className="w-6 h-6 text-red-400" aria-hidden="true" />
                 <span className="font-bold text-sm">Setback / Relapse</span>
                 <span className="text-[11px] text-slate-400 text-center">Honest accountability</span>
               </button>
             </div>
-          </div>
+          </fieldset>
         )}
 
         {/* Completion Mode */}
         {habit.type === 'completion' && (
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-slate-300 block">
               Completion Status
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+            </legend>
+            <div role="radiogroup" aria-label="Completion Status" className="grid grid-cols-2 gap-3">
               <button
                 type="button"
+                role="radio"
+                aria-checked={status === 'completed'}
                 onClick={() => setStatus('completed')}
-                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 ${
                   status === 'completed'
                     ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300 shadow-[0_0_15px_rgba(46,125,78,0.25)]'
                     : 'bg-obsidian-900 border-obsidian-750 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
-                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" aria-hidden="true" />
                 <span className="font-bold text-sm">Completed</span>
                 <span className="text-[11px] text-slate-400 text-center">Protocol fulfilled</span>
               </button>
 
               <button
                 type="button"
+                role="radio"
+                aria-checked={status === 'failed'}
                 onClick={() => setStatus('failed')}
-                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${
+                className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 ${
                   status === 'failed'
                     ? 'bg-red-950/60 border-red-500/80 text-red-300 shadow-[0_0_15px_rgba(168,58,58,0.25)]'
                     : 'bg-obsidian-900 border-obsidian-750 text-slate-400 hover:border-obsidian-600'
                 }`}
               >
-                <XCircle className="w-6 h-6 text-red-400" />
+                <XCircle className="w-6 h-6 text-red-400" aria-hidden="true" />
                 <span className="font-bold text-sm">Missed / Failed</span>
                 <span className="text-[11px] text-slate-400 text-center">Not fulfilled today</span>
               </button>
             </div>
-          </div>
+          </fieldset>
         )}
 
         {/* Quantitative Mode */}
         {isQuantitative && (
           <div className="space-y-3 p-4 rounded-xl bg-obsidian-900 border border-obsidian-750">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-200">
+              <label htmlFor="checkin-numeric-input" className="text-xs font-semibold text-slate-200">
                 Recorded Value ({habit.unit || 'units'})
               </label>
               <Badge variant="gold" size="sm">
@@ -209,13 +221,14 @@ export function CheckInModal({
 
             <div className="flex items-center gap-3">
               <input
+                id="checkin-numeric-input"
                 type="number"
                 step="any"
                 min="0"
                 value={numericValue}
                 onChange={(e) => setNumericValue(e.target.value === '' ? '' : Number(e.target.value))}
                 placeholder={`e.g. ${habit.targetValue}`}
-                className="w-full bg-obsidian-850 border border-obsidian-700 rounded-lg px-3.5 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-gold-500"
+                className="w-full bg-obsidian-850 border border-obsidian-700 rounded-lg px-3.5 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400"
                 autoFocus
               />
               <span className="text-sm text-slate-400 font-medium whitespace-nowrap">
@@ -225,6 +238,8 @@ export function CheckInModal({
 
             {numericValue !== '' && (
               <div
+                role="status"
+                aria-live="polite"
                 className={`p-2.5 rounded-lg border text-xs flex items-center justify-between ${
                   isTargetMet
                     ? 'bg-emerald-950/40 border-emerald-800 text-emerald-300'
@@ -244,31 +259,35 @@ export function CheckInModal({
 
         {/* Optional Notes */}
         <div>
-          <label className="text-[11px] text-slate-400 block mb-1">
+          <label htmlFor="checkin-notes-input" className="text-[11px] text-slate-400 block mb-1">
             Reflection / Context Note (Optional)
           </label>
           <input
+            id="checkin-notes-input"
             type="text"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g. Finished morning workout with great focus..."
-            className="w-full bg-obsidian-900 border border-obsidian-750 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-gold-500"
+            className="w-full bg-obsidian-900 border border-obsidian-750 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400"
           />
         </div>
 
         {/* Audit Correction Reason if modifying */}
         {isEditingExisting && (
           <div>
-            <label className="text-[11px] text-amber-400 font-semibold block mb-1">
-              Audit Correction Reason <span className="text-gold-400">*</span>
+            <label htmlFor="checkin-correction-reason" className="text-[11px] text-amber-400 font-semibold block mb-1">
+              Audit Correction Reason <span className="text-gold-400" aria-hidden="true">*</span>
+              <span className="sr-only">(required for corrections)</span>
             </label>
             <input
+              id="checkin-correction-reason"
               type="text"
               value={correctionReason}
               onChange={(e) => setCorrectionReason(e.target.value)}
               placeholder="e.g. Corrected typo in logged distance; actual was 6km"
-              className="w-full bg-obsidian-900 border border-amber-700/60 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-gold-500"
+              className="w-full bg-obsidian-900 border border-amber-700/60 rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-gold-500 focus-visible:ring-2 focus-visible:ring-gold-400"
               required
+              aria-required="true"
             />
           </div>
         )}

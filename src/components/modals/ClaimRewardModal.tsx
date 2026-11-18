@@ -55,16 +55,20 @@ export function ClaimRewardModal({
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-gold-400" />
+          <Trophy className="w-5 h-5 text-gold-400" aria-hidden="true" />
           <span>Claim Milestone Reward</span>
         </div>
       }
       description="Honor your discipline. Claim your well-deserved reward."
     >
-      <form onSubmit={handleClaim} className="space-y-5">
+      <form onSubmit={handleClaim} className="space-y-5" noValidate>
         {error && (
-          <div className="flex items-start gap-2.5 p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" />
+          <div
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-2.5 p-3 rounded-lg bg-red-950/40 border border-red-500/30 text-red-300 text-xs"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 text-red-400 mt-0.5" aria-hidden="true" />
             <span>{error}</span>
           </div>
         )}
@@ -95,7 +99,7 @@ export function ClaimRewardModal({
 
           {achievement.personalNote && (
             <div className="flex items-start gap-2 p-2.5 rounded-lg bg-charcoal-950/80 border border-charcoal-800 text-xs text-charcoal-300 italic mb-2">
-              <Quote className="w-3.5 h-3.5 text-gold-500/60 shrink-0 mt-0.5" />
+              <Quote className="w-3.5 h-3.5 text-gold-500/60 shrink-0 mt-0.5" aria-hidden="true" />
               <span>"{achievement.personalNote}"</span>
             </div>
           )}
@@ -114,29 +118,33 @@ export function ClaimRewardModal({
 
         {/* Claim Date */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
-            Date of Claim / Celebration
+          <label htmlFor="claim-date-input" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+            Date of Claim / Celebration <span className="text-gold-400" aria-hidden="true">*</span>
+            <span className="sr-only">(required)</span>
           </label>
           <input
+            id="claim-date-input"
             type="date"
             required
+            aria-required="true"
             value={claimDate}
             onChange={(e) => setClaimDate(e.target.value)}
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 focus:outline-none focus:border-gold-500/70"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-sm text-charcoal-100 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400"
           />
         </div>
 
         {/* Optional Reflection Notes */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
+          <label htmlFor="claim-notes-input" className="block text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-1.5">
             Celebration Reflection (Optional)
           </label>
           <textarea
+            id="claim-notes-input"
             rows={3}
             value={claimNotes}
             onChange={(e) => setClaimNotes(e.target.value)}
             placeholder="How did you celebrate or honor this milestone? What feelings or insights arose?"
-            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 resize-none"
+            className="w-full bg-charcoal-900 border border-charcoal-700/80 rounded-lg px-3.5 py-2.5 text-xs text-charcoal-100 placeholder-charcoal-500 focus:outline-none focus:border-gold-500/70 focus-visible:ring-2 focus-visible:ring-gold-400 resize-none"
           />
         </div>
 
@@ -151,7 +159,7 @@ export function ClaimRewardModal({
             Later
           </Button>
           <Button type="submit" variant="primary" disabled={isSubmitting}>
-            <CheckCircle2 className="w-4 h-4 mr-1.5 text-obsidian-950" />
+            <CheckCircle2 className="w-4 h-4 mr-1.5 text-obsidian-950" aria-hidden="true" />
             {isSubmitting ? 'Recording...' : 'Confirm Reward Claimed'}
           </Button>
         </div>

@@ -105,8 +105,9 @@ export function JournalView() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-200 focus:outline-none cursor-pointer focus-visible:ring-1 focus-visible:ring-gold-400 rounded"
               title="Select reflection date"
+              aria-label="Select reflection date"
             />
           </div>
         </div>
