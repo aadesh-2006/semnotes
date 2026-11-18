@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useId } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../core/utils';
 
@@ -9,6 +9,7 @@ export interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  initialFocusRef?: React.RefObject<HTMLElement | null>;
 }
 
 export function Modal({
@@ -17,21 +18,86 @@ export function Modal({
   title,
   description,
   children,
-  maxWidth = 'md'
+  maxWidth = 'md',
+  initialFocusRef
 }: ModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const baseId = useId();
+  const titleId = title ? `modal-title-${baseId}` : undefined;
+  const descId = description ? `modal-desc-${baseId}` : undefined;
+
   useEffect(() => {
+    if (!isOpen) return;
+
+    // Cache element focused prior to modal open
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+
+      // Focus trap implementation
+      if (e.key === 'Tab' && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+
+        if (focusableElements.length === 0) {
+          e.preventDefault();
+          return;
+        }
+
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement || document.activeElement === dialogRef.current) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
+
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Initial focus placement: use custom ref, or first focusable child, or the dialog container itself
+    const timer = setTimeout(() => {
+      if (initialFocusRef?.current) {
+        initialFocusRef.current.focus();
+      } else if (dialogRef.current) {
+        const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (firstFocusable) {
+          firstFocusable.focus();
+        } else {
+          dialogRef.current.focus();
+        }
+      }
+    }, 10);
+
     return () => {
+      clearTimeout(timer);
       document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleKeyDown);
+
+      // Restore focus to previously focused element when modal closes
+      if (previousActiveElement.current && typeof previousActiveElement.current.focus === 'function') {
+        previousActiveElement.current.focus();
+      }
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, initialFocusRef]);
 
   if (!isOpen) return null;
 
@@ -53,25 +119,33 @@ export function Modal({
 
       {/* Modal Dialog Content */}
       <div
+        ref={dialogRef}
+        tabIndex={-1}
         className={cn(
-          'relative w-full bg-obsidian-850 border border-obsidian-700 rounded-2xl shadow-obsidian-elevated z-10 overflow-hidden transform transition-all',
+          'relative w-full bg-obsidian-850 border border-obsidian-700 rounded-2xl shadow-obsidian-elevated z-10 overflow-hidden transform transition-all outline-none focus-visible:ring-1 focus-visible:ring-gold-400/40',
           maxWidths[maxWidth]
         )}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descId}
       >
         <div className="flex items-center justify-between px-6 py-5 border-b border-obsidian-750">
           <div>
             {title && (
-              <h3 className="text-lg font-semibold font-display text-slate-100">{title}</h3>
+              <h3 id={titleId} className="text-lg font-semibold font-display text-slate-100">
+                {title}
+              </h3>
             )}
             {description && (
-              <p className="text-xs text-slate-400 mt-0.5">{description}</p>
+              <p id={descId} className="text-xs text-slate-400 mt-0.5">
+                {description}
+              </p>
             )}
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-gold-300 p-1.5 rounded-lg hover:bg-obsidian-800 transition-colors"
+            className="text-slate-400 hover:text-gold-300 p-1.5 rounded-lg hover:bg-obsidian-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-850"
             aria-label="Close dialog"
           >
             <X className="w-5 h-5" />

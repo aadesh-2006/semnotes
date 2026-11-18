@@ -81,16 +81,16 @@ export function QuickActionModal({
       description="Choose an immediate command protocol"
       maxWidth="md"
     >
-      <div className="space-y-3">
+      <nav aria-label="Quick Actions" className="space-y-3">
         {actions.map((item, idx) => {
           const Icon = item.icon;
           return (
             <button
               key={idx}
               onClick={item.action}
-              className="w-full flex items-center gap-3.5 p-3.5 rounded-xl bg-obsidian-800/80 hover:bg-obsidian-750 border border-obsidian-700/80 hover:border-gold-500/40 text-left transition-all group"
+              className="w-full flex items-center gap-3.5 p-3.5 rounded-xl bg-obsidian-800/80 hover:bg-obsidian-750 border border-obsidian-700/80 hover:border-gold-500/40 text-left transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-850"
             >
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 ${item.color}`}>
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 ${item.color}`} aria-hidden="true">
                 <Icon className="w-5 h-5 transition-transform group-hover:scale-110" />
               </div>
               <div className="flex flex-col flex-1 min-w-0">
@@ -104,11 +104,11 @@ export function QuickActionModal({
             </button>
           );
         })}
-      </div>
+      </nav>
 
-      <div className="mt-5 pt-4 border-t border-obsidian-750 flex justify-end">
+      <div className="mt-4 pt-3 border-t border-obsidian-750 flex justify-end">
         <Button variant="ghost" size="sm" onClick={onClose}>
-          Cancel
+          Dismiss
         </Button>
       </div>
     </Modal>
