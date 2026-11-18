@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-rc.2] — 2026-11-18 (Milestone 10 Phase 2, Batch 2: Database Integrity, Historical Preservation & Restore Safety)
+
+### Added
+- **Dexie Schema v6 Migration (`src/storage/db/index.ts`):**
+  - Upgraded IndexedDB schema to Version 6 adding the `deletedAt` index on the `habits` table (`id, name, trackingType, status, deletedAt, createdAt, updatedAt`).
+  - Added deterministic schema upgrade migrating existing habits to include `deletedAt: undefined`.
+  - Updated `CURRENT_DB_VERSION = 6` in `backupTypes.ts`.
+- **Historical Data Preservation on Habit Deletion (`AUDIT-DATA-01`):**
+  - **Normal Habit Deletion (Default):** `HabitService.deleteHabit(id, { purgeHistory: false })` marks the habit with `status = 'deleted'` and `deletedAt = timestamp`.
+  - Soft-deleted habits are filtered out of active habit listings (`HabitService.getAllHabits`, `StreaksView`, `CommandCenter`) while preserving all historical records: `habitLogs`, `auditRecords`, `milestones`, `achievements`, `focusSessions`, `journalEntries`, and `urgeLogs`.
+  - Consistency Calendar preserves past evaluation dates prior to `deletedAt` via `calendarAggregationService.ts`.
+  - Added `HabitService.restoreDeletedHabit(id)` to restore soft-deleted habits back to active or paused state.
+- **Explicit Transactional History Purge (`AUDIT-DATA-01`):**
+  - `HabitService.purgeHabitHistory(id)` enables explicit, permanent removal of a habit and its strictly habit-dependent records (`habits`, `habitLogs`, `auditRecords`, `milestones`, `achievements`) within a single ACID transaction.
+  - **Data Invariant Protection (Decoupling):** User-authored personal reflections and focused work hours (`focusSessions`, `journalEntries`, `urgeLogs`, `morningIntentions`) are strictly preserved by decoupling their foreign keys (`linkedHabitId = undefined`, `habitId = undefined`), ensuring personal history and user hours are never deleted.
+- **Native Atomic IndexedDB Restore Transactions (`AUDIT-DATA-02`):**
+  - Completely redesigned `RestoreTransactionService` to eliminate volatile in-memory safety snapshot rollbacks.
+  - **Pre-Transaction Validation & Preparation:** `validateAndPrepare` validates all payloads against Zod schemas and prepares in-memory records outside any transaction, failing fast on malformed data before touching tables.
+  - **Single Atomic Transaction for Replace:** Executes `db.transaction('rw', allTables, ...)` clearing existing records and populating all 11 tables atomically. Any unexpected write fault triggers browser-native IndexedDB ACID rollback.
+  - **Conflict-Safe Merge Restore:** Single atomic transaction merging backup records with local data, preserving local records on compound key collisions (`[habitId+date]`, `[habitId+thresholdDays]`) and reporting detailed conflict diagnostics via `MergeConflictDetail[]`.
+- **Comprehensive Automated Test Suites:**
+  - `src/test/habitDeletionIntegrity.test.ts`: 9 comprehensive tests covering normal deletion, restoration, explicit purge, decoupling of focus/journal/urges, independent habit isolation, idempotent deletion, analytics consistency, restore of deleted habit backup, and transaction rollback.
+  - `src/test/restoreSafety.test.ts`: 8 tests covering invalid payload pre-rejection, atomic rollback on write error, empty database restore, 1,000+ record high-volume restore, merge deduplication, conflict reporting, and complete 11-table coverage.
+  - Platform test suite now passes 100% with 251 tests across 29 test suites.
+
+---
+
 ## [1.0.0-rc.1] — 2026-11-18 (Milestone 10 Phase 2, Batch 1: Security Hardening, Root Error Boundary & Product Alignment)
 
 ### Added

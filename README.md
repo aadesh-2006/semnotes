@@ -2,7 +2,7 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--RC1%20Batch%201%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--RC2%20Batch%202%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
@@ -12,6 +12,7 @@
 [![Focus](https://img.shields.io/badge/Focus%20Engine-Custom%20%26%20Pomodoro-C5A869.svg)](#focus-mode)
 [![Storage](https://img.shields.io/badge/Storage%20Engine-Backup%20%26%20AES--256%20Sync-C5A869.svg)](#sovereign-storage)
 [![Reliability](https://img.shields.io/badge/Reliability-Root%20Error%20Boundary-C5A869.svg)](#resilience-and-stability)
+[![Integrity](https://img.shields.io/badge/Integrity-Preservation%20%26%20ACID%20Restore-3E885B.svg)](#database-integrity)
 
 SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency, fulfill commitments, and cultivate self-mastery across academics, fitness, reading, coding, routines, and personal commitments.
 
@@ -25,7 +26,7 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 2. **True Streak Independence:** Habit commitments—whether completion tasks (e.g. algorithmic practice, reading), quantitative targets (e.g. workout volume, distance, hydration), or abstinence commitments (e.g. screen time reduction)—run in complete isolation. An interruption in one routine never compromises another.
 3. **Idempotent Milestones & Meaningful Rewards:** Independent threshold day schedules per habit with immutable historical snapshots and isolated claim workflows that celebrate discipline without corrupting streak counters.
 4. **Forensic Consistency Calendar & Heatmap:** Monthly matrix and 52-week contribution heatmap calculating actual daily completion percentages with pending commitment isolation and day-by-day inspection.
-5. **Local-First Privacy:** All habit entities, daily logs, check-ins, milestones, and audit records reside on-device in IndexedDB (`semnotes_db` via Dexie.js).
+5. **Local-First Privacy & Integrity:** All habit entities, daily logs, check-ins, milestones, focus records, and reflections reside on-device in IndexedDB (`semnotes_db` v6 via Dexie.js). Habit deletions preserve historical audit records by default, and database restorations execute inside native browser ACID transactions.
 6. **Obsidian & Gold Aesthetics:** A solemn, high-contrast palette reflecting gravitas and focus: deep charcoals, ink blacks, and muted brushed gold accents.
 
 ---
@@ -34,10 +35,10 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 
 - **Frontend:** React 19, TypeScript 5.7, Vite 6
 - **Styling:** Tailwind CSS (Obsidian & Gold Design System), Lucide React
-- **Persistence:** Dexie.js (IndexedDB v5) with reactive `useLiveQuery`
+- **Persistence:** Dexie.js (IndexedDB v6) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
-- **Testing:** Vitest & React Testing Library (234/234 automated tests passing across 27 test suites)
+- **Testing:** Vitest & React Testing Library (251/251 automated tests passing across 29 test suites)
 
 ---
 
@@ -53,7 +54,7 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 | **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, routine diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
 | **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, habit performance breakdowns, and consistency patterns. | **Active (Live Engine)** |
 | **Focus Mode** | Timestamp-driven custom focus (1m–12h), Pomodoro cycles, session history, and focus analytics. | **Active (Live Engine)** |
-| **Settings & Storage** | Local-first sovereign data management, validated JSON backup/restore with snapshot rollback, RFC 4180 CSV exports, and client-side AES-256 encrypted sync. | **Active (Live Engine)** |
+| **Settings & Storage** | Local-first sovereign data management, validated JSON backup/restore with native ACID transactions, RFC 4180 CSV exports, and client-side AES-256 encrypted sync. | **Active (Live Engine)** |
 
 ---
 

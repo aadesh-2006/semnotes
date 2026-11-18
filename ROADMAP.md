@@ -14,7 +14,7 @@
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
 | **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
 | **M9** | **Storage & Sync** | **DONE** | Complete JSON backup/restore, SHA-256 checksums, CSV exports, AES-256-GCM encryption, sync provider. |
-| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1 (Security, Error Boundary, Product Alignment) completed. |
+| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1 & Batch 2 (Database Integrity & Restore Safety) completed. |
 
 ---
 
@@ -156,11 +156,15 @@
   - [x] `AUDIT-ARCH-01`: Implemented resilient root-level React Error Boundary (`RootErrorBoundary.tsx`) wrapping `<App />` with Obsidian & Gold fallback UI, safe application reload, collapsible technical stack trace, and non-destructive emergency database backup export via `BackupExportService`.
   - [x] `AUDIT-PROD-01`: Fully aligned application architecture with universal discipline vision by removing obsolete Recovery Protocol route (`recovery`), navigation entries in `routes.ts` & `App.tsx`, and `RecoveryView.tsx`.
   - [x] Platform test suite expanded to 234 passing tests across 27 test files (100% pass rate).
-- [ ] **Batch 2: Integrity & State Remediation (Upcoming)**
-  - [ ] `AUDIT-DATA-01`: Transactional cascading deletion for habit references.
-  - [ ] `AUDIT-DATA-02`: Streaming / chunked restore for massive JSON backups.
+- [x] **Batch 2: Database Integrity, Historical Preservation & Restore Safety (Completed)**
+  - [x] `AUDIT-DATA-01`: Historical data preservation on normal habit deletion (soft-deletion via `deletedAt` index, preserving logs, milestones, achievements, focus sessions, journal entries, and urge logs).
+  - [x] `AUDIT-DATA-01`: Explicit transactional history purge (`purgeHabitHistory`) cascading dependent habit records while safely decoupling foreign keys from personal reflections, urge logs, and focus sessions.
+  - [x] `AUDIT-DATA-02`: Native atomic single-transaction IndexedDB restore engine covering all 11 tables, replacing fragile in-memory safety snapshot rollback.
+  - [x] `AUDIT-DATA-02`: Pre-transaction validation and in-memory preparation (`validateAndPrepare`) to fail fast before touching database tables.
+  - [x] `AUDIT-DATA-02`: Conflict-safe merge restore preserving local compound keys with detailed conflict reporting (`MergeConflictDetail[]`).
+  - [x] Automated test suite expanded to 251 passing tests across 29 test files (100% pass rate).
+- [ ] **Batch 3: Routing, Performance & Cryptography (Upcoming)**
   - [ ] `AUDIT-ROUT-01`: Hash-based SPA routing for refresh stability.
-- [ ] **Batch 3: Performance, Cryptography & Tooling (Upcoming)**
   - [ ] `AUDIT-PERF-01`: Route-level dynamic code splitting for bundle optimization.
   - [ ] `AUDIT-SEC-02`: Configurable PBKDF2 iterations for low-spec device safety.
   - [ ] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Vitest v8 coverage tooling setup.

@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1–M9 Complete; M10 Phase 1 Audit & Phase 2 Batch 1 (Security, Root Error Boundary & Product Alignment) Complete
+**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1 (Security, Root Error Boundary, Alignment) & Batch 2 (Database Integrity, Historical Preservation & Restore Safety) Complete
 
 ---
 
@@ -289,12 +289,12 @@ Before any restore write operation is permitted, `BackupValidationService` execu
 6. Foreign-key reference integrity auditing across related tables.
 
 ### C. Safe Restore Transaction Engine
-1. **Safety Snapshot & Rollback:**
-   Before any restore operation begins, an in-memory safety snapshot is captured. If any database transaction step fails, the previous database state is rolled back cleanly.
-2. **Mode 1: Replace:**
-   Atomic purge of existing tables and bulk write of backup records with safety snapshot protection.
-3. **Mode 2: Merge:**
-   Additive restoration. Skips existing primary keys, deduplicates compound keys (`[habitId+date]`, `[habitId+thresholdDays]`), and preserves unique reflection dates (`morningIntentions`, `eveningDebriefs`).
+1. **Pre-Transaction Validation & Preparation:**
+   Before any table write begins, `validateAndPrepare` validates all payloads with Zod schemas and prepares in-memory records outside any transaction. Any payload corruption or schema failure aborts immediately before touching IndexedDB.
+2. **Native Atomic Single-Transaction Replace:**
+   Executes inside a single native Dexie IndexedDB read-write transaction (`db.transaction('rw', allTables, ...)`) covering all 11 tables. Clears existing tables and atomically commits backup records. Any write failure triggers browser-native ACID rollback, eliminating reliance on fragile in-memory safety snapshot rollback.
+3. **Conflict-Safe Merge Restore:**
+   Executes inside an atomic transaction adding backup records while preserving local records on compound key collisions (`[habitId+date]`, `[habitId+thresholdDays]`) and unique dates (`morningIntentions`, `eveningDebriefs`). Returns detailed conflict diagnostics (`MergeConflictDetail[]`).
 
 ### D. Category-Specific CSV Exports
 Strict RFC 4180 compliant CSV generator with UTF-8 Byte Order Mark (`\uFEFF`) to prevent character encoding issues in spreadsheet applications. Specialized exports for Habits, Check-Ins, Focus Sessions, Milestones/Rewards, and Intentions & Reflections.
@@ -310,7 +310,7 @@ Strict RFC 4180 compliant CSV generator with UTF-8 Byte Order Mark (`\uFEFF`) to
 
 ---
 
-## 11. Application Resilience & Root Error Boundary (M10)
+## 11. Application Resilience & Root Error Boundary (M10 Batch 1)
 
 ### A. Root Error Interception Architecture
 The entire React component hierarchy (`<App />`) is enclosed in a sovereign root-level React Error Boundary (`RootErrorBoundary.tsx`) in `src/main.tsx`:
@@ -347,3 +347,29 @@ Unlike generic error screens that trap user data in an unrecoverable state, `Roo
 ### C. Privacy Firewall in Error Diagnostics
 - Error boundary diagnostics expose strictly technical error metadata (ISO timestamp, error name, error message, and component stack trace).
 - Private journal entries, user reflections, intentions, and habit notes are strictly excluded and never rendered in error boundary traces or logged to tracking services.
+
+---
+
+## 12. Database Integrity, Historical Preservation & Deletion Semantics (M10 Batch 2)
+
+### A. Schema Version 6 Upgrade
+The Dexie schema was upgraded to Version 6 with the addition of the `deletedAt` index on the `habits` table (`id, name, trackingType, status, deletedAt, createdAt, updatedAt`).
+
+### B. Dual Deletion Semantics (`AUDIT-DATA-01`)
+1. **Normal Habit Deletion (Soft Deletion — Default):**
+   - Executed via `HabitService.deleteHabit(id, { purgeHistory: false })`.
+   - Sets `status = 'deleted'` and records ISO timestamp `deletedAt`.
+   - Excluded from active habit lists and check-in rosters (`HabitService.getAllHabits`, `StreaksView`, `CommandCenter`).
+   - **Zero Historical Data Loss:** Preserves all `habitLogs`, `auditRecords`, `milestones`, `achievements`, `focusSessions`, `journalEntries`, and `urgeLogs`.
+   - **Consistency Calendar Integrity:** Historical evaluation dates up to `deletedAt` evaluate completed commitments accurately.
+   - **Reversibility:** Fully recoverable via `HabitService.restoreDeletedHabit(id)`.
+2. **Explicit History Purge (Hard Purge):**
+   - Executed via `HabitService.purgeHabitHistory(id)` or `deleteHabit(id, { purgeHistory: true })`.
+   - Transactionally removes the habit and strictly habit-dependent entities (`habits`, `habitLogs`, `auditRecords`, `milestones`, `achievements`).
+   - **Foreign-Key Decoupling Invariant:** Personal writings, reflection debriefs, and focused study hours are NEVER deleted. Associated `focusSessions`, `journalEntries`, `urgeLogs`, and `morningIntentions` have their `linkedHabitId` / `habitId` decoupled to `undefined` within the same transaction.
+
+### C. Native Crash-Resilient Restore Engine (`AUDIT-DATA-02`)
+- Replaces in-memory rollback snapshots with single native IndexedDB transactions (`db.transaction('rw', allTables, ...)`).
+- Pre-transaction payload validation and preparation outside the transaction guarantees zero writes on malformed inputs.
+- Single atomic replace transaction with browser-enforced ACID rollback.
+- Conflict-safe merge transaction preserving existing records on compound key collisions with structured conflict diagnostics.
