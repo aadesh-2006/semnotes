@@ -85,7 +85,6 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
       title: 'Graph Traversal Sprint',
       plannedDurationMinutes: 50,
       sessionMode: 'custom',
-      habitId: habit.id,
       linkedHabitId: habit.id,
       notes: 'Focused DSA graph traversal practice',
     });
@@ -227,7 +226,6 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
       title: 'Sprint Session',
       plannedDurationMinutes: 25,
       sessionMode: 'pomodoro',
-      habitId: habit.id,
       linkedHabitId: habit.id,
       notes: 'Focus session notes that must not be deleted',
     });
@@ -264,7 +262,7 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
     expect(preservedSession).toBeDefined();
     expect(preservedSession?.plannedDurationMinutes).toBe(25);
     expect(preservedSession?.linkedHabitId).toBeUndefined();
-    expect(preservedSession?.habitId).toBeUndefined();
+    expect((preservedSession as any)?.habitId).toBeUndefined();
 
     const preservedJournal = await db.journalEntries.get(journalEntry.id);
     expect(preservedJournal).toBeDefined();

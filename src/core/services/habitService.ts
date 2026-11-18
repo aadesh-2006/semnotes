@@ -262,12 +262,12 @@ export class HabitService {
 
       // 3. Decouple focusSessions (preserve user focused hours)
       const affectedSessions = await db.focusSessions
-        .filter((s) => s.habitId === id || s.linkedHabitId === id)
+        .filter((s) => s.linkedHabitId === id || (s as any).habitId === id)
         .toArray();
       for (const session of affectedSessions) {
         const updated = { ...session };
-        if (updated.habitId === id) delete (updated as any).habitId;
-        if (updated.linkedHabitId === id) delete (updated as any).linkedHabitId;
+        if ((updated as any).habitId === id) delete (updated as any).habitId;
+        if (updated.linkedHabitId === id) delete updated.linkedHabitId;
         await db.focusSessions.put(updated);
       }
 
