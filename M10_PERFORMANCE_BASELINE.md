@@ -84,3 +84,43 @@ A user opening the Command Center (`/`) immediately downloads the full charting 
    - Audit heavy calculations (e.g. calendar aggregation, habit statistics) to prevent redundant re-renders.
 5. **Verification & Measurement:**
    - Measure resulting chunk sizes, verify lazy loading on demand via browser DevTools, and ensure 100% test pass rate.
+
+---
+
+## 5. Measured Improvements & Budget Compliance (Post-Optimization)
+
+Following implementation of route-level code splitting, `manualChunks` vendor isolation, and modal on-demand loading, the production build was re-measured:
+
+### Post-Optimization Chunk Distribution
+
+| Chunk Name | Role / Content | Raw Size | Gzip Size | Loading Behavior |
+| :--- | :--- | :---: | :---: | :--- |
+| `index-DcIB5ahR.js` | Main Application Entry & Command Center | **125.72 kB** | **36.94 kB** | Initial Download (Down by 90.8%) |
+| `vendor-react-DA1AItoQ.js` | React 19 Core & DOM Runtime | **223.35 kB** | **69.29 kB** | Initial Download |
+| `vendor-db-CmwseVeD.js` | Dexie.js IndexedDB Engine | **100.98 kB** | **33.06 kB** | Initial Download |
+| `vendor-validation-Uis5lAuO.js` | Zod Runtime Schema Validator | **94.22 kB** | **26.77 kB** | Initial Download |
+| `vendor-icons-BhpkCpbz.js` | Lucide React Core Icons | **44.07 kB** | **8.99 kB** | Initial Download |
+| `vendor-router-BqNGcJ9f.js` | React Router v7 & Navigation | **38.64 kB** | **13.96 kB** | Initial Download |
+| `vendor-charts-m-kCoIrz.js` | Recharts + D3 Visualization Engine | **417.79 kB** | **112.94 kB** | **Deferred (100% On-Demand)** |
+| `FocusView-Cxuffqtl.js` | Focus Timer & Pomodoro Engine | **59.91 kB** | **12.39 kB** | **Deferred (On-Demand)** |
+| `SettingsView-W1qQkBUj.js` | Settings, Backup, AES-256 Crypto & Sync | **57.79 kB** | **14.51 kB** | **Deferred (On-Demand)** |
+| `JournalView-CK_ssglb.js` | Sovereign Reflection & Diagnostics | **54.91 kB** | **12.05 kB** | **Deferred (On-Demand)** |
+| `AnalyticsView-CHUo1jud.js` | Discipline Analytics Views & Metrics | **39.40 kB** | **9.55 kB** | **Deferred (On-Demand)** |
+| `StreaksView-BBhFKsqi.js` | Streak Architect & Habit Cards | **30.78 kB** | **7.38 kB** | **Deferred (On-Demand)** |
+| `CalendarView-C0MX2KhM.js` | Consistency Calendar & Heatmap | **30.40 kB** | **7.12 kB** | **Deferred (On-Demand)** |
+| `MilestonesView-B5uYTclm.js` | Milestones & Reward Center | **14.25 kB** | **3.64 kB** | **Deferred (On-Demand)** |
+| `ClaimRewardModal-CjWXgpTP.js`| Milestone Reward Claim Workflow | **14.79 kB** | **3.98 kB** | **Deferred (On-Demand)** |
+| `HabitFormModal-DPfLTyZc.js` | Habit Creation & Configuration | **10.42 kB** | **3.09 kB** | **Deferred (On-Demand)** |
+| `CheckInModal-BGCCF-fT.js` | Habit Check-In & Fulfillment | **7.62 kB** | **2.41 kB** | **Deferred (On-Demand)** |
+| `NotFoundView-DbEwnHkr.js` | 404 Recovery Screen | **2.24 kB** | **0.94 kB** | **Deferred (On-Demand)** |
+
+### Before vs. After Comparison
+
+| Metric | Before (Commit `9858656`) | After (Batch 3B) | Net Improvement |
+| :--- | :---: | :---: | :---: |
+| **Initial Entry Script (`index.js`)** | 1,373.49 kB (370.10 kB gz) | **125.72 kB (36.94 kB gz)** | **-90.8% reduction** |
+| **Heavy Charting (`vendor-charts`)** | In initial bundle | **Deferred to `/analytics`** | **100% eliminated from initial load** |
+| **Secondary Views & Modals** | In initial bundle | **Deferred on-demand** | **~350 kB eliminated from initial load** |
+| **Rollup >500 kB Warning** | 1 chunk >500 kB | **0 chunks >500 kB** | **Resolved completely** |
+| **Build Duration** | 22.69 seconds | **15.72 seconds** | **30.7% faster build** |
+| **Automated Test Count** | 270 passed | **281 passed** | **+11 tests, 100% pass rate** |

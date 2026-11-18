@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1, Batch 2 & Batch 3A (URL-Based Routing & Navigation Reliability) Complete
+**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1, Batch 2, Batch 3A & Batch 3B (Performance & Code Splitting) Complete
 
 ---
 
@@ -448,3 +448,44 @@ Because SEMNÓTĒS is a Single Page Application (SPA) using HTML5 History API, p
   ```
 - **Cloudflare Pages / GitHub Pages:** Standard SPA rewrite rule or `404.html` fallback.
 - **Vite Dev Server:** HTML5 history API fallback is natively built-in for local development.
+
+---
+
+## 14. Performance Optimization, Bundle Splitting & Runtime Efficiency (M10 Batch 3B)
+
+### A. Architectural Code Splitting Model (`AUDIT-PERF-01`)
+To ensure rapid first paint and avoid downloading the entire 1.37 MB application bundle on initial landing, SEMNÓTĒS applies a hierarchical code-splitting architecture:
+
+1. **Eager Initial Surface:**
+   - `CommandCenter` (Landing View `/`): Statically loaded for immediate zero-delay first paint.
+   - Core Layout: `AppShell`, `Sidebar`, and Navigation tokens.
+2. **On-Demand Secondary Views (`React.lazy` + `Suspense`):**
+   - `StreaksView` (`/streaks` & `/streaks/:habitId`)
+   - `CalendarView` (`/calendar`)
+   - `JournalView` (`/journal`)
+   - `AnalyticsView` (`/analytics`)
+   - `FocusView` (`/focus`)
+   - `MilestonesView` (`/milestones`)
+   - `SettingsView` (`/settings`)
+   - `NotFoundView` (`*`)
+3. **Modal & Component-Level Deferral:**
+   - `HabitFormModal`: Heavy creation form and date configuration loaded only on trigger.
+   - `CheckInModal`: Check-in modal loaded only when fulfilling a habit.
+   - `JournalEditor` & `JournalHistory`: Sub-tabs in Journal isolated to prevent markdown parsing from bloating the default reflection view.
+
+### B. Vendor Chunking & Heavy Dependency Isolation
+Configured via `build.rollupOptions.output.manualChunks` in `vite.config.ts`:
+- **`vendor-charts` (417.79 kB raw / 112.94 kB gzip):**
+  - Completely isolates `recharts`, D3 packages (`d3-shape`, `d3-scale`, `d3-interpolate`, etc.), and `victory-vendor`.
+  - **100% deferred** from initial payload; loaded strictly when navigating to `/analytics`.
+- **`vendor-react` (223.35 kB):** React 19 core, `react-dom`, and `scheduler`.
+- **`vendor-db` (100.98 kB):** Dexie.js IndexedDB persistence layer.
+- **`vendor-validation` (94.22 kB):** Zod runtime validation schema engine.
+- **`vendor-icons` (44.07 kB):** Lucide React icons.
+- **`vendor-router` (38.64 kB):** React Router v7 navigation engine.
+
+### C. Measured Bundle Improvements
+- **Initial Entry Script (`index.js`):** Reduced from **1,373.49 kB to 125.72 kB** (a **90.8% raw payload reduction**; 36.94 kB gzip).
+- **Rollup Warnings:** Eliminated the `>500 kB` chunk warning completely. Zero production chunks exceed 420 kB.
+- **Build Speed:** Production build duration improved from 22.69s to 15.72s (30.7% faster).
+- **Runtime Calculations:** Memoized discipline metrics, active streak tallies, and scheduled habit maps in `CommandCenter`, preventing repetitive array filtering across tick renders.

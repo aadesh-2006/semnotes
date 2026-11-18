@@ -2,9 +2,10 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--RC3%20Batch%203A%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--RC4%20Batch%203B%20Optimized-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
+[![Performance](https://img.shields.io/badge/Performance-Code--Split%20%26%20Lean-3E885B.svg)](#performance-optimization)
 [![Routing](https://img.shields.io/badge/Routing-URL--Based%20History-C5A869.svg)](#url-routing)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
 [![Engine](https://img.shields.io/badge/Calendar%20Engine-Discipline%20Heatmap-C5A869.svg)](#consistency-calendar)
@@ -40,7 +41,8 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 - **Validation:** Zod Schema Validation
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
 - **Routing:** React Router v7 (`react-router-dom`) with HTML5 History, deep linking, and 404 recovery
-- **Testing:** Vitest & React Testing Library (270/270 automated tests passing across 30 test suites)
+- **Performance:** Route-level code splitting (`React.lazy`), vendor chunk isolation, deferred charting (`recharts`), and runtime memoization
+- **Testing:** Vitest & React Testing Library (281/281 automated tests passing across 31 test suites)
 
 ---
 

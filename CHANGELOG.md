@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-rc.4] — 2026-11-18 (Milestone 10 Phase 2, Batch 3B: Performance Optimization, Bundle Reduction & Runtime Efficiency)
+
+### Performance & Bundle Optimizations (`AUDIT-PERF-01`)
+- **Route-Level Code Splitting (`src/App.tsx`):**
+  - Converted secondary module views (`StreaksView`, `CalendarView`, `JournalView`, `AnalyticsView`, `FocusView`, `MilestonesView`, `SettingsView`, and `NotFoundView`) into on-demand dynamic imports (`React.lazy()`).
+  - Preserved eager loading for `CommandCenter` to guarantee immediate zero-delay first paint for the application landing route (`/`).
+  - Reduced main entry script size from **1,373.49 kB down to 125.72 kB** (a **90.8% raw payload reduction**; 36.94 kB gzipped).
+- **Obsidian & Gold Suspense Loading Fallback (`src/components/feedback/RouteLoadingFallback.tsx`):**
+  - Implemented an accessible, zero-layout-shift loading indicator featuring ambient gold glowing compass insignia and polite status messaging (`role="status"`, `aria-live="polite"`).
+  - Respects user accessibility preferences (`motion-reduce:animate-none`).
+- **Heavy Visualization Vendor Isolation (`vite.config.ts`):**
+  - Isolated `recharts`, D3 formatting/scaling utilities, and vendor libraries into a dedicated on-demand `vendor-charts` chunk (417.79 kB raw / 112.94 kB gzip).
+  - Heavy charting libraries are completely eliminated from initial application download and fetched strictly when `/analytics` is navigated to.
+- **Granular Vendor Chunking (`vite.config.ts`):**
+  - Configured Rollup `manualChunks` isolating `vendor-react` (React 19 / DOM runtime), `vendor-router` (React Router v7), `vendor-db` (Dexie.js), `vendor-validation` (Zod), and `vendor-icons` (Lucide React).
+  - Completely eliminated Rollup `>500 kB` chunk size warning across the entire production build (largest single chunk is 417 kB on-demand).
+  - Accelerated production build duration from 22.69s down to 15.72s (30.7% faster build).
+- **Sub-Route & Modal On-Demand Isolation:**
+  - `JournalView`: Isolated `JournalEditor` (markdown editor) and `JournalHistory` (archive) into lazy sub-chunks, speeding up default reflection tab rendering.
+  - `CommandCenter`: Converted `HabitFormModal` and `CheckInModal` to lazy on-demand components, preventing modal code from polluting the landing view.
+- **Runtime Memoization:**
+  - Memoized today's discipline metrics, active streak aggregates, and scheduled habit counts in `CommandCenter.tsx`, eliminating redundant array iterations across re-renders.
+- **Automated Performance Test Suite (`src/test/lazyRouteLoading.test.tsx`):**
+  - Added 11 automated tests covering Suspense fallback rendering, immediate root route resolution, on-demand secondary view resolution, and error recovery.
+  - Platform-wide test count expanded to 281/281 passing tests across 31 test suites.
+
+---
+
 ## [1.0.0-rc.3] — 2026-11-18 (Milestone 10 Phase 2, Batch 3A: URL-Based Routing & Navigation Reliability)
 
 ### Added

@@ -14,7 +14,7 @@
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
 | **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
 | **M9** | **Storage & Sync** | **DONE** | Complete JSON backup/restore, SHA-256 checksums, CSV exports, AES-256-GCM encryption, sync provider. |
-| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1, Batch 2 & Batch 3A (Routing) completed. |
+| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1, Batch 2, Batch 3A & Batch 3B (Performance) completed. |
 
 ---
 
@@ -170,8 +170,16 @@
   - [x] `AUDIT-ROUT-01`: Obsidian & Gold 404 `NotFoundView` catching invalid paths with clean return actions.
   - [x] `AUDIT-ROUT-01`: Documented SPA fallback rewrite configuration for Vercel, Netlify, Nginx, and static hosting platforms.
   - [x] Automated test suite expanded to 270 passing tests across 30 test files (100% pass rate).
-- [ ] **Batch 3B: Performance, Cryptography & Tooling (Upcoming)**
-  - [ ] `AUDIT-PERF-01`: Route-level dynamic code splitting for bundle optimization.
+- [x] **Batch 3B: Performance Optimization, Bundle Reduction & Runtime Efficiency (Completed)**
+  - [x] `AUDIT-PERF-01`: Established empirical baseline (`M10_PERFORMANCE_BASELINE.md`) measuring 1,373.49 kB monolithic JS bundle and 22.69s build.
+  - [x] `AUDIT-PERF-01`: Implemented route-level dynamic code splitting (`React.lazy` + `Suspense`) deferring all secondary views while preserving instant landing for Command Center.
+  - [x] `AUDIT-PERF-01`: Isolated heavy charting engine (`vendor-charts` with Recharts & D3 at 417.79 kB raw / 112.94 kB gz) to on-demand loading on `/analytics`.
+  - [x] `AUDIT-PERF-01`: Configured granular vendor chunking (`vendor-react`, `vendor-db`, `vendor-validation`, `vendor-icons`, `vendor-router`), completely eliminating Rollup `>500 kB` warning.
+  - [x] `AUDIT-PERF-01`: Achieved **125.72 kB initial entry script** (-90.8% payload reduction) and accelerated build duration to 15.72s (30.7% faster).
+  - [x] `AUDIT-PERF-01`: Created reusable Obsidian & Gold `<RouteLoadingFallback />` with polite status accessibility and reduced-motion support.
+  - [x] `AUDIT-PERF-01`: Memoized discipline metrics, streak calculations, and active counts in `CommandCenter.tsx`.
+  - [x] Automated test suite expanded to 281 passing tests across 31 test suites (100% pass rate).
+- [ ] **Batch 3C: Cryptography & Tooling (Upcoming)**
   - [ ] `AUDIT-SEC-02`: Configurable PBKDF2 iterations for low-spec device safety.
   - [ ] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Vitest v8 coverage tooling setup.
 - [ ] **Batch 4: Accessibility, Release Verification & Polish (Upcoming)**
