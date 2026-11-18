@@ -1,16 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Badge } from '../../components/ui/badge';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { MorningIntentionCard } from './MorningIntentionCard';
 import { EveningReflectionCard } from './EveningReflectionCard';
-import { JournalEditor } from './JournalEditor';
-import { JournalHistory } from './JournalHistory';
 import { UrgeLoggerCard } from '../urges/UrgeLoggerCard';
 import { UrgeDiagnosticService } from '../../core/urges/urgeDiagnosticService';
+import { RouteLoadingFallback } from '../../components/feedback/RouteLoadingFallback';
 import type { UrgeLogRecord, UrgeDiagnosticSummary } from '../../core/urges/urgeTypes';
 import type { JournalEntry } from '../../core/journal/journalTypes';
 import { formatCalendarDate } from '../../core/utils';
+
+// Lazy-load heavy markdown editor and searchable history archive
+const JournalEditor = lazy(() => import('./JournalEditor').then((m) => ({ default: m.JournalEditor })));
+const JournalHistory = lazy(() => import('./JournalHistory').then((m) => ({ default: m.JournalHistory })));
 import {
   BookOpen,
   Sun,
@@ -186,15 +189,17 @@ export function JournalView() {
       {/* Tab 2: Private Journal Editor */}
       {activeTab === 'journal' && (
         <div className="space-y-4">
-          <JournalEditor
-            entryToEdit={entryToEdit}
-            onSaved={handleJournalSaved}
-            onDeleted={handleJournalDeleted}
-            onCancel={() => {
-              setEntryToEdit(null);
-              setActiveTab('history');
-            }}
-          />
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <JournalEditor
+              entryToEdit={entryToEdit}
+              onSaved={handleJournalSaved}
+              onDeleted={handleJournalDeleted}
+              onCancel={() => {
+                setEntryToEdit(null);
+                setActiveTab('history');
+              }}
+            />
+          </Suspense>
         </div>
       )}
 
@@ -346,10 +351,12 @@ export function JournalView() {
 
       {/* Tab 4: Journal History & Archives */}
       {activeTab === 'history' && (
-        <JournalHistory
-          onSelectEntryForEdit={handleSelectEntryForEdit}
-          refreshTrigger={historyRefreshKey}
-        />
+        <Suspense fallback={<RouteLoadingFallback />}>
+          <JournalHistory
+            onSelectEntryForEdit={handleSelectEntryForEdit}
+            refreshTrigger={historyRefreshKey}
+          />
+        </Suspense>
       )}
     </div>
   );
