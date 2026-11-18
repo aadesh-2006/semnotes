@@ -2,7 +2,7 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--M9%20Complete-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--RC1%20Batch%201%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
@@ -11,6 +11,7 @@
 [![Analytics](https://img.shields.io/badge/Analytics%20Engine-Rolling%2030D%20Score-C5A869.svg)](#discipline-analytics)
 [![Focus](https://img.shields.io/badge/Focus%20Engine-Custom%20%26%20Pomodoro-C5A869.svg)](#focus-mode)
 [![Storage](https://img.shields.io/badge/Storage%20Engine-Backup%20%26%20AES--256%20Sync-C5A869.svg)](#sovereign-storage)
+[![Reliability](https://img.shields.io/badge/Reliability-Root%20Error%20Boundary-C5A869.svg)](#resilience-and-stability)
 
 SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency, fulfill commitments, and cultivate self-mastery across academics, fitness, reading, coding, routines, and personal commitments.
 
@@ -36,7 +37,7 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 - **Persistence:** Dexie.js (IndexedDB v5) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
-- **Testing:** Vitest & React Testing Library (222/222 automated tests passing across 25 test suites)
+- **Testing:** Vitest & React Testing Library (234/234 automated tests passing across 27 test suites)
 
 ---
 

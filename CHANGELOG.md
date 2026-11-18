@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-rc.1] — 2026-11-18 (Milestone 10 Phase 2, Batch 1: Security Hardening, Root Error Boundary & Product Alignment)
+
+### Added
+- **Resilient Root-Level React Error Boundary (`src/components/errors/RootErrorBoundary.tsx`):**
+  - Robust React class component error boundary implementing `getDerivedStateFromError` and `componentDidCatch`.
+  - Wraps root `<App />` component in `src/main.tsx` to prevent unrecoverable blank screen disruptions during rendering faults.
+  - Custom Obsidian & Gold fallback UI with ambient gold gradient bar, alert insignia, clear disturbance explanation, and zero data-loss reassurance.
+  - **Sovereign Emergency Database Export**: Embedded non-destructive export button directly generating and downloading a full database backup via `BackupExportService` without requiring user reload or navigation.
+  - Collapsible sanitized technical disturbance details exposing ISO timestamp, error name, message, stack trace, and component stack trace while strictly guaranteeing zero leakage of private reflections or journal notes.
+  - Unit and integration test suite (`src/components/errors/RootErrorBoundary.test.tsx`) covering normal child rendering, error catching, fallback display, reload triggers, technical details toggling, successful emergency export, and graceful error handling.
+
+### Security & Dependency Hardening
+- **Resolved Runtime & Tooling Vulnerabilities (`AUDIT-SEC-01`):**
+  - Upgraded runtime schema validation dependency `zod` to `^4.6.7`, completely resolving high-severity advisory GHSA-mrhx-c7xc-m3w5 (uncontrolled resource consumption via unconstrained collections).
+  - Enforced `tinypool: ^2.2.0` dependency override in `package.json`, completely eliminating two critical-severity remote execution vulnerabilities (GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr).
+  - Reduced total reported dependency vulnerabilities from 15 to 13 (0 critical, remaining 12 high in `picomatch` are build/dev tooling without upstream fix available, 1 moderate in dev `@vitest/mocker`).
+
+### Changed & Removed (Product Alignment)
+- **Universal Discipline Architecture Alignment (`AUDIT-PROD-01`):**
+  - Completely purged obsolete Recovery Protocol route (`recovery`) from `src/app/routes.ts` and view rendering switch in `src/App.tsx`.
+  - Deleted legacy recovery interface `src/features/recovery/RecoveryView.tsx`.
+  - Cleaned up navigation bar down to the 8 approved general-purpose discipline routes (`dashboard`, `streaks`, `calendar`, `journal`, `analytics`, `focus`, `milestones`, `settings`).
+  - Added dedicated regression test suite (`src/test/productAlignmentBatch1.test.ts`) affirming route structure, general-purpose discipline positioning, and preservation of all 3 habit types (`completion`, `abstinence`, `quantitative`) and urge diagnostics.
+
+---
+
 ## [1.0.0-alpha.9] — 2026-11-18 (Milestone 9: Data Management, Backup, Restore & Optional Encrypted Sync)
 
 ### Added

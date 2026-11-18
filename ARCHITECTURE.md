@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1 (Foundation), M2 (Habit Management), M3 (Strict Streak Engine), M4 (Milestones & Rewards), M5 (Consistency Calendar), M6 (Journal & Daily Reflection), M7 (Discipline Analytics), M7.1 (Product Alignment), & M8 (Focus Mode & Custom Pomodoro) Complete
+**Status:** M1–M9 Complete; M10 Phase 1 Audit & Phase 2 Batch 1 (Security, Root Error Boundary & Product Alignment) Complete
 
 ---
 
@@ -307,3 +307,43 @@ Strict RFC 4180 compliant CSV generator with UTF-8 Byte Order Mark (`\uFEFF`) to
   - `useRemote`: Decrypts and replaces local DB with remote version.
   - `useLocal`: Forces local state to remote with incremented version.
   - `merge`: Decrypts remote, merges into local DB, and re-uploads unified dataset.
+
+---
+
+## 11. Application Resilience & Root Error Boundary (M10)
+
+### A. Root Error Interception Architecture
+The entire React component hierarchy (`<App />`) is enclosed in a sovereign root-level React Error Boundary (`RootErrorBoundary.tsx`) in `src/main.tsx`:
+
+```
+┌────────────────────────────────────────────────────────┐
+│                   Browser Viewport                     │
+├────────────────────────────────────────────────────────┤
+│ <RootErrorBoundary>                                    │
+│   ┌──────────────────────────────────────────────────┐ │
+│   │ <App>                                            │ │
+│   │   ├── Navigation & AppShell                      │ │
+│   │   └── View Rendering (8 Modules)                 │ │
+│   │       └── Component Subtrees                     │ │
+│   └──────────────────────────────────────────────────┘ │
+│   │ (On Unhandled Render Exception)                    │
+│   ▼                                                    │
+│   ┌──────────────────────────────────────────────────┐ │
+│   │ Resilient Obsidian & Gold Fallback UI            │ │
+│   │ ├── Calm disturbance explanation & integrity note│ │
+│   │ ├── "Reload Application" action                  │ │
+│   │ ├── "Export Emergency Database Backup" button     │ │
+│   │ └── Collapsible sanitized technical stack trace  │ │
+│   └──────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────┘
+```
+
+### B. Non-Destructive Emergency Database Backup
+Unlike generic error screens that trap user data in an unrecoverable state, `RootErrorBoundary` integrates directly with `BackupExportService`:
+- Generates a fully validated JSON database backup directly from Dexie IndexedDB in-memory without requiring application reload or navigation.
+- Preserves user records even if unexpected presentation layer bugs prevent components from rendering.
+- Handles database access failures gracefully with non-technical, compassionate guidance.
+
+### C. Privacy Firewall in Error Diagnostics
+- Error boundary diagnostics expose strictly technical error metadata (ISO timestamp, error name, error message, and component stack trace).
+- Private journal entries, user reflections, intentions, and habit notes are strictly excluded and never rendered in error boundary traces or logged to tracking services.

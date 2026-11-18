@@ -13,8 +13,8 @@
 | **M7** | **Discipline Analytics** | **DONE** | Algorithmic Rolling 30-day Discipline Score, Recharts visualizations, habit performance, consistency patterns. |
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
 | **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
-| **M9** | **Storage & Sync** | Planned | Dexie IndexedDB sync, JSON/CSV exports, local-first backup. |
-| **M10** | **Quality Assurance** | Planned | Comprehensive E2E tests, accessibility pass, production polish. |
+| **M9** | **Storage & Sync** | **DONE** | Complete JSON backup/restore, SHA-256 checksums, CSV exports, AES-256-GCM encryption, sync provider. |
+| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1 (Security, Error Boundary, Product Alignment) completed. |
 
 ---
 
@@ -144,7 +144,26 @@
 - [x] Full-featured Sovereign Data Management workspace in Settings (`BackupExportPanel`, `BackupRestorePanel`, `BackupValidationModal`, `CSVExportPanel`, `SyncSettingsPanel`, `DataManagementView`).
 - [x] Comprehensive automated test suite with 35 new tests across 5 test suites (222/222 passing platform-wide).
 
-### M10 — Quality Assurance & Release Polish
-- [ ] Playwright E2E verification of critical check-in and recovery flows.
-- [ ] WCAG AA accessibility compliance.
-- [ ] Lighthouse 95+ performance optimization.
+### M10 — Quality Assurance & Release Polish (In Progress)
+#### Phase 1: Comprehensive Engineering Audit (Completed)
+- [x] Read-only audit across 12 engineering dimensions documented in `M10_AUDIT_REPORT.md`.
+- [x] Identification and risk assessment of findings `AUDIT-SEC-01` through `AUDIT-DEP-01`.
+
+#### Phase 2: Remediation Batches
+- [x] **Batch 1: Security Hardening, Root Error Boundary & Product Alignment (Completed)**
+  - [x] `AUDIT-SEC-01`: Upgraded runtime Zod dependency to `4.6.7` eliminating high-severity advisory GHSA-mrhx-c7xc-m3w5.
+  - [x] `AUDIT-SEC-01`: Enforced `tinypool: ^2.2.0` dependency override eliminating critical vulnerabilities GHSA-5gmw-xhrv-c9v3 and GHSA-85c8-ppgw-ccpr.
+  - [x] `AUDIT-ARCH-01`: Implemented resilient root-level React Error Boundary (`RootErrorBoundary.tsx`) wrapping `<App />` with Obsidian & Gold fallback UI, safe application reload, collapsible technical stack trace, and non-destructive emergency database backup export via `BackupExportService`.
+  - [x] `AUDIT-PROD-01`: Fully aligned application architecture with universal discipline vision by removing obsolete Recovery Protocol route (`recovery`), navigation entries in `routes.ts` & `App.tsx`, and `RecoveryView.tsx`.
+  - [x] Platform test suite expanded to 234 passing tests across 27 test files (100% pass rate).
+- [ ] **Batch 2: Integrity & State Remediation (Upcoming)**
+  - [ ] `AUDIT-DATA-01`: Transactional cascading deletion for habit references.
+  - [ ] `AUDIT-DATA-02`: Streaming / chunked restore for massive JSON backups.
+  - [ ] `AUDIT-ROUT-01`: Hash-based SPA routing for refresh stability.
+- [ ] **Batch 3: Performance, Cryptography & Tooling (Upcoming)**
+  - [ ] `AUDIT-PERF-01`: Route-level dynamic code splitting for bundle optimization.
+  - [ ] `AUDIT-SEC-02`: Configurable PBKDF2 iterations for low-spec device safety.
+  - [ ] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Vitest v8 coverage tooling setup.
+- [ ] **Batch 4: Accessibility, Release Verification & Polish (Upcoming)**
+  - [ ] `AUDIT-A11Y-01`: Comprehensive WCAG 2.1 AA keyboard navigation, aria labels, and contrast audit.
+  - [ ] End-to-end user journey verification and production release readiness signoff.
