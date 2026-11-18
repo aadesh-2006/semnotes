@@ -20,6 +20,22 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  /* Accessible focus indicators (WCAG 2.4.7 / 2.4.11 / 2.4.13) */
+  :focus-visible {
+    outline: 2px solid #C5A869;
+    outline-offset: 2px;
+  }
+
+  /* Support for users with motion sensitivity (WCAG 2.3.3) */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
   /* Custom Obsidian scrollbar */
   ::-webkit-scrollbar {
     width: 6px;

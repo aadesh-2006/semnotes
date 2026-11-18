@@ -29,6 +29,7 @@ export function Sidebar({
 
   return (
     <aside
+      aria-label="Application sidebar"
       className={cn(
         'hidden md:flex flex-col bg-obsidian-900 border-r border-obsidian-700/60 h-screen sticky top-0 transition-all duration-300 z-30 select-none',
         isCollapsed ? 'w-20' : 'w-64'
@@ -39,7 +40,7 @@ export function Sidebar({
         {!isCollapsed ? (
           <NavLink
             to="/"
-            className="flex items-center gap-3 overflow-hidden group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400 rounded-lg"
+            className="flex items-center gap-3 overflow-hidden group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 rounded-lg"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-obsidian-800 to-obsidian-900 border border-gold-500/40 flex items-center justify-center shadow-gold-sm flex-shrink-0 group-hover:border-gold-400 transition-colors">
               <span className="font-serif text-lg font-bold text-gold-300 tracking-wider">Σ</span>
@@ -56,7 +57,7 @@ export function Sidebar({
         ) : (
           <NavLink
             to="/"
-            className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-obsidian-800 to-obsidian-900 border border-gold-500/40 flex items-center justify-center shadow-gold-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400 hover:border-gold-400 transition-colors"
+            className="w-10 h-10 mx-auto rounded-xl bg-gradient-to-br from-obsidian-800 to-obsidian-900 border border-gold-500/40 flex items-center justify-center shadow-gold-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900 hover:border-gold-400 transition-colors"
           >
             <span className="font-serif text-lg font-bold text-gold-300">Σ</span>
           </NavLink>
@@ -64,7 +65,9 @@ export function Sidebar({
 
         <button
           onClick={onToggleCollapse}
-          className="text-slate-400 hover:text-gold-300 p-1.5 rounded-lg hover:bg-obsidian-800 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400"
+          aria-expanded={!isCollapsed}
+          aria-controls="desktop-primary-navigation"
+          className="text-slate-400 hover:text-gold-300 p-1.5 rounded-lg hover:bg-obsidian-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900"
           title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
         >
@@ -74,6 +77,7 @@ export function Sidebar({
 
       {/* Navigation Routes */}
       <nav
+        id="desktop-primary-navigation"
         aria-label="Desktop primary navigation"
         className="flex-1 py-4 px-3 space-y-1 overflow-y-auto"
       >
@@ -98,7 +102,7 @@ export function Sidebar({
               onClick={() => handleNavClick(route.id)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400',
+                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-obsidian-900',
                 isActive
                   ? 'bg-gradient-to-r from-gold-500/15 via-gold-500/10 to-transparent text-gold-300 border-l-2 border-gold-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800/60'

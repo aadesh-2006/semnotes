@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { NAVIGATION_ROUTES, getRouteIdFromPathname, type RouteId } from './routes';
@@ -24,6 +24,9 @@ export function AppShell({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
+  const mobileDrawerRef = useRef<HTMLDivElement>(null);
+  const hamburgerButtonRef = useRef<HTMLButtonElement>(null);
+
   // URL location is the primary source of truth; falls back to currentRoute or 'dashboard'
   const activeRouteId = getRouteIdFromPathname(location.pathname) || currentRoute;
   const activeRouteConfig = activeRouteId ? NAVIGATION_ROUTES.find((r) => r.id === activeRouteId) : null;
@@ -36,8 +39,68 @@ export function AppShell({
     setIsMobileMenuOpen(false);
   };
 
+  // Keyboard accessibility and focus trap for mobile navigation drawer
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileMenuOpen(false);
+        hamburgerButtonRef.current?.focus();
+        return;
+      }
+
+      if (e.key === 'Tab' && mobileDrawerRef.current) {
+        const focusables = mobileDrawerRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first || document.activeElement === mobileDrawerRef.current) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Initial focus into drawer
+    const timer = setTimeout(() => {
+      if (mobileDrawerRef.current) {
+        const firstFocusable = mobileDrawerRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), [href]'
+        );
+        firstFocusable?.focus();
+      }
+    }, 15);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [isMobileMenuOpen]);
+
   return (
     <div className="min-h-screen bg-obsidian-950 flex flex-col md:flex-row text-slate-100">
+      {/* Skip to Main Content Link for Keyboard / Screen Reader Users (WCAG 2.4.1) */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-gold-400 focus:text-obsidian-950 focus:font-bold focus:rounded-lg focus:shadow-gold-glow focus:outline-none focus:ring-2 focus:ring-gold-200"
+      >
+        Skip to main content
+      </a>
+
       {/* Desktop Sidebar */}
       <Sidebar
         currentRoute={activeRouteId || 'dashboard'}
@@ -53,8 +116,11 @@ export function AppShell({
           {/* Left section: mobile hamburger + current view title */}
           <div className="flex items-center gap-3">
             <button
+              ref={hamburgerButtonRef}
               onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden p-2 rounded-lg bg-obsidian-800 text-slate-300 hover:text-gold-300 border border-obsidian-700"
+              aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-navigation-drawer"
+              className="md:hidden p-2 rounded-lg bg-obsidian-800 text-slate-300 hover:text-gold-300 border border-obsidian-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
               aria-label="Open mobile navigation"
             >
               <Menu className="w-5 h-5" />
@@ -88,6 +154,7 @@ export function AppShell({
               size="sm"
               onClick={onQuickAction}
               className="flex items-center shadow-gold-sm"
+              aria-label="Open Quick Action Menu"
             >
               <Plus className="w-4 h-4 mr-1 text-obsidian-950 stroke-[2.5]" />
               <span className="font-semibold text-obsidian-950 text-xs sm:text-sm">Quick Action</span>
@@ -96,19 +163,35 @@ export function AppShell({
         </header>
 
         {/* Content Body */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto animate-in fade-in duration-300 outline-none"
+        >
           {children}
         </main>
       </div>
 
-      {/* Mobile Drawer Backdrop & Menu */}
+      {/* Mobile Drawer Backdrop & Menu (WCAG Dialog Semantics) */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
           <div
             className="fixed inset-0 bg-obsidian-950/80 backdrop-blur-sm transition-opacity"
-            onClick={() => setIsMobileMenuOpen(false)}
+            onClick={() => {
+              setIsMobileMenuOpen(false);
+              hamburgerButtonRef.current?.focus();
+            }}
+            aria-hidden="true"
           />
-          <div className="relative w-72 max-w-[80vw] bg-obsidian-900 border-r border-obsidian-700 h-full flex flex-col p-5 shadow-2xl z-10">
+          <div
+            id="mobile-navigation-drawer"
+            ref={mobileDrawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile Navigation Menu"
+            tabIndex={-1}
+            className="relative w-72 max-w-[80vw] bg-obsidian-900 border-r border-obsidian-700 h-full flex flex-col p-5 shadow-2xl z-10 outline-none"
+          >
             <div className="flex items-center justify-between pb-5 border-b border-obsidian-750">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-obsidian-800 border border-gold-500/40 flex items-center justify-center">
@@ -117,8 +200,12 @@ export function AppShell({
                 <span className="font-serif font-bold text-slate-100 tracking-wider">SEMNÓTĒS</span>
               </div>
               <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  hamburgerButtonRef.current?.focus();
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
+                aria-label="Close mobile navigation"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -138,7 +225,7 @@ export function AppShell({
                     onClick={() => handleMobileRouteSelect(route.id)}
                     aria-current={isActive ? 'page' : undefined}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400',
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400',
                       isActive
                         ? 'bg-gold-500/15 text-gold-300 border-l-2 border-gold-400 font-semibold'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-obsidian-800'
@@ -179,7 +266,7 @@ export function AppShell({
               onClick={() => onRouteChange?.(route.id)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
-                'flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400',
+                'flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400',
                 isActive ? 'text-gold-300 font-semibold' : 'text-slate-400 hover:text-slate-200'
               )}
             >
@@ -190,8 +277,9 @@ export function AppShell({
         })}
         <button
           onClick={() => setIsMobileMenuOpen(true)}
-          className="flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold-400"
+          className="flex flex-col items-center justify-center w-16 h-12 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400"
           aria-label="Open navigation modules drawer"
+          aria-expanded={isMobileMenuOpen}
         >
           <Compass className="w-5 h-5 mb-0.5 text-slate-400" />
           <span>More</span>
