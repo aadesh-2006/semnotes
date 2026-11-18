@@ -45,11 +45,11 @@ export type MorningIntention = z.infer<typeof MorningIntentionSchema>;
 export const SaveMorningIntentionInputSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
   primaryIntention: z.string().min(1, 'Primary intention is required'),
-  keyCommitment: z.string().default('').optional(),
-  potentialObstacle: z.string().default('').optional(),
-  plannedResponse: z.string().default('').optional(),
-  linkedHabitIds: z.array(z.string().uuid()).default([]).optional(),
-  personalNote: z.string().default('').optional(),
+  keyCommitment: z.string().optional(),
+  potentialObstacle: z.string().optional(),
+  plannedResponse: z.string().optional(),
+  linkedHabitIds: z.array(z.string().uuid()).optional(),
+  personalNote: z.string().optional(),
 });
 export type SaveMorningIntentionInput = z.infer<typeof SaveMorningIntentionInputSchema>;
 
@@ -74,12 +74,12 @@ export type EveningDebrief = z.infer<typeof EveningDebriefSchema>;
 
 export const SaveEveningDebriefInputSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be formatted as YYYY-MM-DD'),
-  wentWell: z.string().default('').optional(),
-  commitmentsFulfilled: z.array(z.string()).default([]).optional(),
-  difficultiesFaced: z.string().default('').optional(),
-  lessonsLearned: z.string().default('').optional(),
-  tomorrowImprovements: z.string().default('').optional(),
-  gratitude: z.string().default('').optional(),
-  closingNote: z.string().default('').optional(),
+  wentWell: z.string().optional(),
+  commitmentsFulfilled: z.array(z.string()).optional(),
+  difficultiesFaced: z.string().optional(),
+  lessonsLearned: z.string().optional(),
+  tomorrowImprovements: z.string().optional(),
+  gratitude: z.string().optional(),
+  closingNote: z.string().optional(),
 });
 export type SaveEveningDebriefInput = z.infer<typeof SaveEveningDebriefInputSchema>;
