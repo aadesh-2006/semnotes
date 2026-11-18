@@ -59,6 +59,7 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
     });
 
     const achievementId = generateUUID();
+    const nowIso = new Date().toISOString();
     await db.achievements.add({
       id: achievementId,
       habitId: habit.id,
@@ -70,6 +71,8 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
       rewardTitle: 'Engineering Book Purchase',
       rewardDescription: 'Buy a technical hardcover',
       isClaimed: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     });
 
     // Claim the reward
@@ -79,7 +82,8 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
 
     // 4. Link a focus session
     const focusSession = await FocusSessionService.createSession({
-      durationMinutes: 50,
+      title: 'Graph Traversal Sprint',
+      plannedDurationMinutes: 50,
       sessionMode: 'custom',
       habitId: habit.id,
       linkedHabitId: habit.id,
@@ -157,7 +161,7 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
 
     // Verify Backup Export and Validation succeed without orphaned reference errors
     const backup = await BackupExportService.generateBackup();
-    const validation = await BackupValidationService.validateBackup(backup);
+    const validation = await BackupValidationService.validate(backup);
     expect(validation.report.isValid).toBe(true);
     expect(validation.report.errors).toHaveLength(0);
     // Reference check passes because the deleted habit is still in backup.data.habits
@@ -203,6 +207,7 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
       thresholdDays: 1,
       rewardTitle: 'Temporary Milestone',
     });
+    const nowIso = new Date().toISOString();
     await db.achievements.add({
       id: generateUUID(),
       habitId: habit.id,
@@ -214,10 +219,13 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
       rewardTitle: 'Temporary Milestone',
       rewardDescription: '',
       isClaimed: true,
+      createdAt: nowIso,
+      updatedAt: nowIso,
     });
 
     const focusSession = await FocusSessionService.createSession({
-      durationMinutes: 25,
+      title: 'Sprint Session',
+      plannedDurationMinutes: 25,
       sessionMode: 'pomodoro',
       habitId: habit.id,
       linkedHabitId: habit.id,
@@ -254,7 +262,7 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
     // Independent records MUST NOT be deleted, but decoupled (linkedHabitId cleared)
     const preservedSession = await db.focusSessions.get(focusSession.id);
     expect(preservedSession).toBeDefined();
-    expect(preservedSession?.durationMinutes).toBe(25);
+    expect(preservedSession?.plannedDurationMinutes).toBe(25);
     expect(preservedSession?.linkedHabitId).toBeUndefined();
     expect(preservedSession?.habitId).toBeUndefined();
 
@@ -342,5 +350,104 @@ describe('Habit Deletion & Historical Integrity (AUDIT-DATA-01)', () => {
     await HabitService.purgeHabitHistory(habit.id);
 
     expect(await db.habits.get(habit.id)).toBeUndefined();
+  });
+
+  it('preserves historical analytics and calendar metrics after normal habit deletion', async () => {
+    const habit = await HabitService.createHabit({
+      title: 'Historical Workout',
+      category: 'body',
+      type: 'completion',
+      schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
+      startDate: '2026-11-01',
+    });
+
+    // 5 completed days
+    await HabitLogService.recordCheckIn(habit, '2026-11-01', { status: 'completed' });
+    await HabitLogService.recordCheckIn(habit, '2026-11-02', { status: 'completed' });
+    await HabitLogService.recordCheckIn(habit, '2026-11-03', { status: 'completed' });
+    await HabitLogService.recordCheckIn(habit, '2026-11-04', { status: 'completed' });
+    await HabitLogService.recordCheckIn(habit, '2026-11-05', { status: 'completed' });
+
+    // Normal deletion on 2026-11-05
+    await HabitService.deleteHabit(habit.id, false);
+
+    // Verify historical logs still exist
+    const logs = await db.habitLogs.where('habitId').equals(habit.id).toArray();
+    expect(logs).toHaveLength(5);
+
+    // Verify that querying all habits includes deleted when includeDeleted is true
+    const allIncluding = await HabitService.getAllHabits({ includeDeleted: true });
+    expect(allIncluding.some((h) => h.id === habit.id)).toBe(true);
+
+    // Verify default query hides it
+    const activeOnly = await HabitService.getAllHabits();
+    expect(activeOnly.some((h) => h.id === habit.id)).toBe(false);
+  });
+
+  it('restores backups containing records associated with deleted habits accurately', async () => {
+    const habit = await HabitService.createHabit({
+      title: 'Backed-Up Deleted Habit',
+      category: 'mind',
+      type: 'completion',
+      schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
+      startDate: '2026-11-01',
+    });
+
+    await HabitLogService.recordCheckIn(habit, '2026-11-01', { status: 'completed' });
+    await HabitService.deleteHabit(habit.id, false);
+
+    // Export backup
+    const backup = await BackupExportService.generateBackup();
+
+    // Clear database
+    await db.transaction('rw', db.tables, async () => {
+      for (const table of db.tables) {
+        await table.clear();
+      }
+    });
+    expect(await db.habits.count()).toBe(0);
+
+    // Restore backup
+    await RestoreTransactionService.restoreReplace(backup);
+
+    // Verify deleted habit and its logs restored
+    const restored = await db.habits.get(habit.id);
+    expect(restored).toBeDefined();
+    expect(restored?.status).toBe('deleted');
+
+    const logs = await db.habitLogs.where('habitId').equals(habit.id).toArray();
+    expect(logs).toHaveLength(1);
+    expect(logs[0].status).toBe('completed');
+  });
+
+  it('rolls back completely if a transaction error occurs during permanent purge', async () => {
+    const habit = await HabitService.createHabit({
+      title: 'Rollback Habit',
+      category: 'craft',
+      type: 'completion',
+      schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
+      startDate: '2026-11-01',
+    });
+    await HabitLogService.recordCheckIn(habit, '2026-11-01', { status: 'completed' });
+
+    // Spy on db.achievements.where to force an error mid-transaction
+    const originalWhere = db.achievements.where;
+    db.achievements.where = (() => {
+      throw new Error('Simulated transaction storage error during purge');
+    }) as any;
+
+    try {
+      await expect(HabitService.purgeHabitHistory(habit.id)).rejects.toThrow(
+        /Simulated transaction storage error during purge/
+      );
+    } finally {
+      db.achievements.where = originalWhere;
+    }
+
+    // Verify that because of transaction rollback, the habit and log still exist!
+    const preservedHabit = await db.habits.get(habit.id);
+    expect(preservedHabit).toBeDefined();
+    const preservedLogs = await db.habitLogs.where('habitId').equals(habit.id).toArray();
+    expect(preservedLogs).toHaveLength(1);
   });
 });
