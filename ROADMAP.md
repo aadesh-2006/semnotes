@@ -14,7 +14,7 @@
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
 | **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
 | **M9** | **Storage & Sync** | **DONE** | Complete JSON backup/restore, SHA-256 checksums, CSV exports, AES-256-GCM encryption, sync provider. |
-| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1, Batch 2, Batch 3A & Batch 3B (Performance) completed. |
+| **M10** | **Quality Assurance & Polish** | **DONE** | Complete WCAG 2.1 AA accessibility, 600k PBKDF2 hardening, zero production vulns, 354/354 tests. |
 
 ---
 
@@ -179,9 +179,31 @@
   - [x] `AUDIT-PERF-01`: Created reusable Obsidian & Gold `<RouteLoadingFallback />` with polite status accessibility and reduced-motion support.
   - [x] `AUDIT-PERF-01`: Memoized discipline metrics, streak calculations, and active counts in `CommandCenter.tsx`.
   - [x] Automated test suite expanded to 281 passing tests across 31 test suites (100% pass rate).
-- [ ] **Batch 3C: Cryptography & Tooling (Upcoming)**
-  - [ ] `AUDIT-SEC-02`: Configurable PBKDF2 iterations for low-spec device safety.
-  - [ ] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Vitest v8 coverage tooling setup.
-- [ ] **Batch 4: Accessibility, Release Verification & Polish (Upcoming)**
-  - [ ] `AUDIT-A11Y-01`: Comprehensive WCAG 2.1 AA keyboard navigation, aria labels, and contrast audit.
-  - [ ] End-to-end user journey verification and production release readiness signoff.
+- [x] **Batch 3C: Cryptographic Hardening, Backup Compatibility & Test Coverage Infrastructure (Completed)**
+  - [x] `AUDIT-SEC-02`: Upgraded default password-based key derivation to **600,000 PBKDF2 iterations** conforming to OWASP recommendations.
+  - [x] `AUDIT-SEC-02`: Introduced versioned cryptographic container envelopes (`formatVersion: '2.0'`) preserving 100% backward-compatible decryption of legacy v1.0 (100,000 iteration) backups.
+  - [x] `AUDIT-SEC-02`: Created 22 comprehensive cryptographic regression tests (`src/core/crypto/encryptionService.test.ts`) validating round-trips, tampering resistance, malformed tag/IV rejection, and Unicode/multilingual passphrases.
+  - [x] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Configured Vitest v8 coverage tooling (`npm run test:coverage`) and established baseline metrics across core domain and storage modules.
+  - [x] Expanded test suite to 326 passing tests across 34 test files (100% pass rate).
+- [x] **Final Phase: Accessibility, Release Hardening & Production Readiness (Completed)**
+  - [x] `AUDIT-A11Y-01`: Implemented full **WCAG 2.1 AA keyboard and screen reader compliance** across all 15 core application subsystems.
+  - [x] `AUDIT-A11Y-01`: Added high-contrast visible Skip-to-Content link targeting `<main id="main-content" tabIndex={-1}>`.
+  - [x] `AUDIT-A11Y-01`: Accessible modal dialogs with focus trap, initial autofocus, focus return to opener element, and Escape key listeners.
+  - [x] `AUDIT-A11Y-01`: Explicit form label associations (`htmlFor`/`id`), `aria-required`, `aria-invalid`, `aria-describedby`, and validation live regions.
+  - [x] `AUDIT-A11Y-01`: Full radio group semantics (`role="radiogroup"` / `role="radio"` / `aria-checked`) for habit tracking types, habit categories, check-in statuses, and backup restore modes.
+  - [x] `AUDIT-A11Y-01`: High-contrast gold `:focus-visible` focus ring (2px solid `#C5A869` with 2px offset) across interactive elements.
+  - [x] `AUDIT-A11Y-01`: Native `prefers-reduced-motion` overrides in `globals.css` eliminating non-essential transitions and pulsing animations for vestibular-sensitive users.
+  - [x] Automated WCAG testing via `vitest-axe` and `axe-core`: 15/15 subsystems verified with 0 accessibility violations.
+  - [x] Production SPA fallback configuration for static hosts (`public/_redirects` and `vercel.json`).
+  - [x] Zero production dependency vulnerabilities (`npm audit --omit=dev` reports 0 vulnerabilities).
+  - [x] Data integrity release verification: All 17 deletion, restore, and cryptographic scenarios verified.
+  - [x] Total automated test suite: **354/354 passing tests across 36 test files (100% pass rate)**.
+
+---
+
+## 🔮 Post-v1.0 Future Considerations
+
+1. **Native Mobile Clients:** Responsive PWA installation packaging and React Native companions for iOS and Android.
+2. **Zero-Knowledge Cloud Sync Providers:** Community-hosted end-to-end encrypted sync adapters (Self-hosted WebDAV, Nextcloud, Apple CloudKit).
+3. **Advanced Knowledge Base Exports:** Markdown vault exports compatible with Obsidian and Logseq for reflective journal entries and milestone ledgers.
+4. **Hardware Quick-Check-in:** Smartwatch / Apple Watch complications for rapid habit check-in and timer control.

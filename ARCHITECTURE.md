@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1, Batch 2, Batch 3A & Batch 3B (Performance & Code Splitting) Complete
+**Status:** Complete v1.0.0 Production Ready; M1–M10 Fully Implemented & Verified
 
 ---
 
@@ -37,9 +37,11 @@ SEMNÓTĒS is a universal, local-first personal discipline and habit tracking pl
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │                  Persistence Layer                     │
-│  (Dexie.js IndexedDB: semnotes_db v3, Audit Trails)    │
-│   - habits, habitLogs, auditRecords,                   │
-│   - milestones, achievements                           │
+│  (Dexie.js IndexedDB: semnotes_db v6, Audit Trails)    │
+│   - habits (with deletedAt tombstone index), habitLogs │
+│   - auditRecords, milestones, achievements             │
+│   - focusSessions, journalEntries, urgeLogs            │
+│   - morningIntentions, eveningDebriefs, userSettings   │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -489,3 +491,70 @@ Configured via `build.rollupOptions.output.manualChunks` in `vite.config.ts`:
 - **Rollup Warnings:** Eliminated the `>500 kB` chunk warning completely. Zero production chunks exceed 420 kB.
 - **Build Speed:** Production build duration improved from 22.69s to 15.72s (30.7% faster).
 - **Runtime Calculations:** Memoized discipline metrics, active streak tallies, and scheduled habit maps in `CommandCenter`, preventing repetitive array filtering across tick renders.
+
+---
+
+## 15. Cryptographic Hardening & Envelope Architecture (M10 Batch 3C)
+
+### A. Envelope Specification & Parameters (`AUDIT-SEC-02`)
+SEMNÓTĒS utilizes client-side zero-knowledge encryption powered by the standard browser Web Crypto API (`crypto.subtle`). Backups exported with password encryption are wrapped in an authenticated cryptographic container:
+
+```json
+{
+  "formatVersion": "2.0",
+  "cipherAlgorithm": "AES-GCM",
+  "keyLength": 256,
+  "kdf": "PBKDF2",
+  "kdfParams": {
+    "hash": "SHA-256",
+    "iterations": 600000,
+    "saltLength": 16
+  },
+  "salt": "<base64-16-bytes>",
+  "iv": "<base64-12-bytes>",
+  "authTag": "<base64-16-bytes>",
+  "ciphertext": "<base64-encrypted-payload>"
+}
+```
+
+1. **OWASP Recommended Iterations:** The default key derivation work factor is configured to **600,000 PBKDF2 iterations** (upgraded from 100,000 in legacy v1.0).
+2. **Cryptographic Primitives:**
+   - Key derivation: `PBKDF2` with `HMAC-SHA-256`.
+   - Symmetric cipher: `AES-GCM` with a 256-bit derived key.
+   - Nonce / IV: 96-bit (12-byte) cryptographically secure pseudorandom initialization vector regenerated for every encryption run.
+   - Authentication Tag: 128-bit authentication tag validating ciphertext integrity and preventing bit-flipping attacks.
+
+### B. Backward Compatibility Matrix
+- When decrypting an envelope with `formatVersion === "1.0"`, `EncryptionService.decryptPayload` automatically Derives the key using 100,000 PBKDF2 iterations.
+- When decrypting an envelope with `formatVersion === "2.0"`, itDerives the key using 600,000 PBKDF2 iterations (or the exact iteration count specified in `kdfParams.iterations`).
+- Any tampering with ciphertext, authentication tag, or IV triggers immediate rejection via `CryptoDecryptionError`.
+
+---
+
+## 16. Accessibility Architecture & Assistive Technology (M10 Final Phase)
+
+### A. WCAG 2.1 AA Compliance Strategy (`AUDIT-A11Y-01`)
+SEMNÓTĒS guarantees full parity for keyboard navigation, screen reader users, and motion-sensitive individuals across all 15 core subsystems:
+
+1. **Semantic Landmarks & Skip Navigation:**
+   - Every primary view is encapsulated in a semantic landmark (`<main id="main-content" tabIndex={-1}>`, `<nav aria-label="Application sidebar">`, `<aside aria-label="Mobile navigation">`).
+   - A visible Skip-to-Content link appears at the very top of the tab order, allowing keyboard users to bypass navigation sidebars directly into main content.
+2. **Accessible Dialogs & Focus Traps:**
+   - `Modal.tsx` implements strict focus confinement (`aria-modal="true"`, `role="dialog"`).
+   - Automatically focuses the first interactive element or close button upon opening.
+   - Intercepts Tab and Shift+Tab to keep focus within the dialog.
+   - Listens for Escape key presses to dismiss modals.
+   - Restores keyboard focus to the opening trigger button upon dismissal.
+3. **Form Association & Live Validation:**
+   - All text inputs, textareas, number inputs, and selects have explicit `<label htmlFor="...">` associations.
+   - Form fields include `aria-required`, `aria-invalid`, and `aria-describedby` pointing to dynamic error message containers.
+   - Habit tracking types, categories, check-in options, and restore modes utilize standard `role="radiogroup"` and `role="radio"` with `aria-checked` states.
+4. **Live Regions & Status Semantics:**
+   - `FocusTimer` employs `role="timer"` and `role="progressbar"` with live numeric percentages (`aria-valuenow`, `aria-valuemax`).
+   - Phase changes (e.g., Focus session completed -> Break started) are announced via polite live regions (`aria-live="polite"`, `role="status"`).
+   - Validation failures and fatal errors are announced via assertive live regions (`role="alert"`).
+5. **High-Contrast Focus Indicators & Reduced Motion:**
+   - Interactive elements define a standardized, high-contrast `:focus-visible` ring (`outline: 2px solid #C5A869; outline-offset: 2px;`).
+   - Global CSS respects `@media (prefers-reduced-motion: reduce)` by halting all transitions and animations, providing a calm, static experience for users with vestibular or seizure sensitivities.
+6. **Automated Verification:**
+   - Integrated `axe-core` and `vitest-axe` across 15 subsystem automated tests, guaranteeing 0 automated accessibility violations across all views and modals.

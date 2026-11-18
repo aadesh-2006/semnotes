@@ -2,19 +2,14 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--RC4%20Batch%203B%20Optimized-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-v1.0.0%20Production%20Ready-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
-[![Performance](https://img.shields.io/badge/Performance-Code--Split%20%26%20Lean-3E885B.svg)](#performance-optimization)
+[![Accessibility](https://img.shields.io/badge/A11y-WCAG%202.1%20AA%20Compliant-3E885B.svg)](#accessibility)
+[![Tests](https://img.shields.io/badge/Tests-354%2F354%20Passing-3E885B.svg)](#running-test-suite)
+[![Security](https://img.shields.io/badge/Vulnerabilities-0%20Production-3E885B.svg)](#sovereign-storage)
+[![Encryption](https://img.shields.io/badge/Crypto-PBKDF2%20600k%20%2B%20AES--256--GCM-C5A869.svg)](#sovereign-storage)
 [![Routing](https://img.shields.io/badge/Routing-URL--Based%20History-C5A869.svg)](#url-routing)
-[![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
-[![Engine](https://img.shields.io/badge/Calendar%20Engine-Discipline%20Heatmap-C5A869.svg)](#consistency-calendar)
-[![Subsystem](https://img.shields.io/badge/Journal%20Subsystem-Privacy--First%20Reflection-C5A869.svg)](#privacy-first-journal)
-[![Analytics](https://img.shields.io/badge/Analytics%20Engine-Rolling%2030D%20Score-C5A869.svg)](#discipline-analytics)
-[![Focus](https://img.shields.io/badge/Focus%20Engine-Custom%20%26%20Pomodoro-C5A869.svg)](#focus-mode)
-[![Storage](https://img.shields.io/badge/Storage%20Engine-Backup%20%26%20AES--256%20Sync-C5A869.svg)](#sovereign-storage)
-[![Reliability](https://img.shields.io/badge/Reliability-Root%20Error%20Boundary-C5A869.svg)](#resilience-and-stability)
-[![Integrity](https://img.shields.io/badge/Integrity-Preservation%20%26%20ACID%20Restore-3E885B.svg)](#database-integrity)
 
 SEMNÓTĒS is a universal, local-first personal discipline and habit tracking platform designed for anyone seeking to build consistency, fulfill commitments, and cultivate self-mastery across academics, fitness, reading, coding, routines, and personal commitments.
 
@@ -37,12 +32,14 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 
 - **Frontend:** React 19, TypeScript 5.7, Vite 6
 - **Styling:** Tailwind CSS (Obsidian & Gold Design System), Lucide React
-- **Persistence:** Dexie.js (IndexedDB v6) with reactive `useLiveQuery`
+- **Accessibility:** WCAG 2.1 AA Compliant (Skip-link, focus traps, ARIA semantics, live regions, `vitest-axe` verified)
+- **Persistence:** Dexie.js (IndexedDB v6 with soft tombstone indices) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
+- **Cryptography:** Web Crypto API AES-256-GCM + PBKDF2 (600,000 iterations v2.0 envelope, 100% v1.0 backward-compatible)
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
 - **Routing:** React Router v7 (`react-router-dom`) with HTML5 History, deep linking, and 404 recovery
 - **Performance:** Route-level code splitting (`React.lazy`), vendor chunk isolation, deferred charting (`recharts`), and runtime memoization
-- **Testing:** Vitest & React Testing Library (281/281 automated tests passing across 31 test suites)
+- **Testing:** Vitest, React Testing Library, Axe-Core & `@vitest/coverage-v8` (354/354 automated tests passing across 36 test suites)
 
 ---
 
@@ -82,16 +79,26 @@ npm install
 npm run dev
 ```
 
-### Running Test Suite
+### Running Test Suite & Coverage
 
 ```bash
+# Run full automated test suite (354 tests)
 npm run test
+
+# Run tests with V8 coverage analysis
+npm run test:coverage
+
+# Run TypeScript compiler strict validation
+npx tsc -b
 ```
 
-### Production Build
+### Production Build & Preview
 
 ```bash
+# Compile and bundle for production
 npm run build
+
+# Preview production build locally
 npm run preview
 ```
 

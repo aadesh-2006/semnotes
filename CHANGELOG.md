@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0] — 2026-11-18 (SEMNÓTĒS v1.0 Production Release & M10 Final Hardening)
+
+### Accessibility (`AUDIT-A11Y-01`)
+- **WCAG 2.1 AA Keyboard Navigation & Focus Management:**
+  - Added visible, high-contrast Skip-to-Content link as the first focusable DOM element, targeting `<main id="main-content" tabIndex={-1}>`.
+  - Implemented keyboard focus trap inside `Modal` and mobile navigation drawer, cycling focus seamlessly with Tab/Shift+Tab and restoring focus to the trigger element upon dismissal.
+  - Implemented Escape key listeners across all modals and side-drawer navigation overlays.
+- **Form Controls & ARIA Associations:**
+  - Explicitly paired all form inputs, textareas, and selects with accessible `<label>` elements via `htmlFor` and unique element IDs.
+  - Added `aria-required`, `aria-invalid`, and `aria-describedby` error bindings across `HabitFormModal`, `CheckInModal`, `MilestoneFormModal`, `ClaimRewardModal`, `FocusSessionSetup`, and `JournalView`.
+  - Transformed habit tracking type selectors, habit category pickers, check-in status options, and backup restore modes into standard accessible radio groups (`role="radiogroup"`, `role="radio"`, `aria-checked`).
+- **Screen Reader Announcements & Status Regions:**
+  - Added `role="timer"` and `role="progressbar"` semantics with `aria-valuenow` / `aria-valuemax` to `FocusTimer`.
+  - Added polite live announcement regions (`aria-live="polite"`, `role="status"`) for timer phase changes (Focus/Break transitions) and file dropzone state feedback.
+  - Added assertive error alerts (`role="alert"`) for validation failures and backup parsing issues.
+- **Visual Focus & Vestibular Sensitivity:**
+  - Enforced high-contrast gold focus indicators (`:focus-visible` with 2px solid `#C5A869` and 2px offset) across buttons, links, inputs, and custom controls in `globals.css`.
+  - Added universal `@media (prefers-reduced-motion: reduce)` overrides silencing all CSS transitions, pulse animations, and transform delays.
+- **Automated Accessibility Verification (`src/test/accessibilityAutomatedWCAG.test.tsx`):**
+  - Integrated `vitest-axe` and `axe-core` to verify all 15 core views and modals. Zero automated accessibility violations across all subsystems.
+
+### Cryptography & Security (`AUDIT-SEC-02`, `AUDIT-SEC-01`)
+- **600,000 PBKDF2 Iteration Hardening:**
+  - Upgraded default key derivation work factor from 100,000 to 600,000 PBKDF2 iterations using SHA-256 and Web Crypto API, aligning with current OWASP password storage and key derivation standards.
+  - Introduced versioned cryptographic container envelopes (`formatVersion: '2.0'`) specifying algorithm, key derivation function, iterations, and 128-bit salt.
+- **Zero-Regret Backward Compatibility:**
+  - Decryption engine detects legacy `1.0` envelopes and automatically derives keys using 100,000 iterations, guaranteeing users can restore older encrypted backups without manual migration.
+- **Production Supply-Chain Audit:**
+  - Verified `npm audit --omit=dev` reports exactly 0 vulnerabilities in the production runtime.
+
+### Data Integrity & Reliability (`AUDIT-DATA-01`, `AUDIT-DATA-02`)
+- **Unified Release Verification Suite (`src/test/dataIntegrityReleaseVerification.test.ts`):**
+  - Added end-to-end regression tests verifying all 17 critical data scenarios: soft deletion tombstones, restoration to active status, explicit permanent purge with reflection/focus foreign key decoupling, complete 11-table export coverage with valid SHA-256 signatures, unencrypted/100k/600k restore compatibility, atomic Replace restore, safe Merge restore with conflict resolution, and invalid payload pre-rejection.
+- **Single Page Application Fallback:**
+  - Added `public/_redirects` and `vercel.json` rewrite configurations ensuring static production hosts (Netlify, Vercel, Cloudflare Pages, Nginx) route all deep links to `index.html`.
+
+### Testing Infrastructure & Metrics (`AUDIT-DEP-01`, `AUDIT-TEST-02`)
+- **Test Coverage Tooling:**
+  - Configured `@vitest/coverage-v8` with `npm run test:coverage` generating comprehensive file-by-file coverage reports.
+  - Achieved **354/354 passing tests across 36 test files (100% pass rate)**.
+- **TypeScript Strict Compliance:**
+  - Resolved all strict type definitions across tests and production components; `npx tsc -b` passes with 0 errors.
+
+---
+
 ## [1.0.0-rc.4] — 2026-11-18 (Milestone 10 Phase 2, Batch 3B: Performance Optimization, Bundle Reduction & Runtime Efficiency)
 
 ### Performance & Bundle Optimizations (`AUDIT-PERF-01`)
