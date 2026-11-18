@@ -8,7 +8,6 @@ import { JournalView } from './features/journal/JournalView';
 import { AnalyticsView } from './features/analytics/AnalyticsView';
 import { FocusView } from './features/focus/FocusView';
 import { MilestonesView } from './features/milestones/MilestonesView';
-import { RecoveryView } from './features/recovery/RecoveryView';
 import { SettingsView } from './features/settings/SettingsView';
 import { QuickActionModal } from './components/modals/QuickActionModal';
 import { HabitFormModal } from './components/modals/HabitFormModal';
@@ -43,8 +42,6 @@ export function App() {
         return <FocusView />;
       case 'milestones':
         return <MilestonesView />;
-      case 'recovery':
-        return <RecoveryView />;
       case 'settings':
         return <SettingsView />;
       default:

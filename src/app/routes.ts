@@ -6,7 +6,6 @@ import {
   LineChart,
   Timer,
   Trophy,
-  ShieldAlert,
   Settings,
   type LucideIcon
 } from 'lucide-react';
@@ -19,7 +18,6 @@ export type RouteId =
   | 'analytics'
   | 'focus'
   | 'milestones'
-  | 'recovery'
   | 'settings';
 
 export interface RouteConfig {
@@ -80,13 +78,6 @@ export const NAVIGATION_ROUTES: RouteConfig[] = [
     shortLabel: 'Rewards',
     icon: Trophy,
     description: 'Custom threshold celebration rules and personal reward claims'
-  },
-  {
-    id: 'recovery',
-    label: 'Recovery Protocol',
-    shortLabel: 'Recovery',
-    icon: ShieldAlert,
-    description: 'Constructive setback analysis without shame or guilt'
   },
   {
     id: 'settings',
