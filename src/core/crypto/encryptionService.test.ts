@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { EncryptionService } from './encryptionService';
 import { CryptoDecryptionError } from './cryptoTypes';
+import {
+  LEGACY_ENCRYPTED_BACKUP_FIXTURE,
+  LEGACY_FIXTURE_PASSPHRASE,
+} from '../../test/fixtures/legacyEncryptedBackupFixture';
+import type { SemnotesBackupPayload } from '../backup/backupTypes';
 
 describe('Client-Side Encryption Service (AES-256-GCM + PBKDF2)', () => {
   const testPassword = 'SovereignDisciplineKey_2026!';
@@ -93,5 +98,21 @@ describe('Client-Side Encryption Service (AES-256-GCM + PBKDF2)', () => {
     await expect(
       EncryptionService.decryptEnvelope(envelope, '')
     ).rejects.toThrow(CryptoDecryptionError);
+  });
+
+  it('successfully decrypts legacy format v1.0 backup fixture created with 100,000 iterations', async () => {
+    expect(LEGACY_ENCRYPTED_BACKUP_FIXTURE.formatVersion).toBe('1.0');
+    expect(LEGACY_ENCRYPTED_BACKUP_FIXTURE.kdfParams.iterations).toBe(100000);
+
+    const decrypted = await EncryptionService.decryptPayload<SemnotesBackupPayload>(
+      LEGACY_ENCRYPTED_BACKUP_FIXTURE,
+      LEGACY_FIXTURE_PASSPHRASE
+    );
+
+    expect(decrypted.manifest.app).toBe('semnotes');
+    expect(decrypted.manifest.backupVersion).toBe('1.0');
+    expect(decrypted.data.habits).toHaveLength(1);
+    expect(decrypted.data.habits[0].title).toBe('Morning Meditation');
+    expect(decrypted.data.habitLogs).toHaveLength(1);
   });
 });
