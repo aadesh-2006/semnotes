@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '../../storage/db';
 import { type Habit, type HabitLog, type AuditRecord } from '../../core/domain/types';
@@ -18,8 +18,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../..
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { Progress } from '../../components/ui/progress';
-import { CheckInModal } from '../../components/modals/CheckInModal';
-import { HabitFormModal } from '../../components/modals/HabitFormModal';
+
+// Lazy-loaded modal overlays to keep initial Command Center bundle lean
+const CheckInModal = lazy(() => import('../../components/modals/CheckInModal').then((m) => ({ default: m.CheckInModal })));
+const HabitFormModal = lazy(() => import('../../components/modals/HabitFormModal').then((m) => ({ default: m.HabitFormModal })));
 import type { RouteId } from '../../app/routes';
 import {
   Flame,
@@ -820,20 +822,28 @@ export function CommandCenter({ onNavigate, onOpenQuickAction }: CommandCenterPr
         </div>
       </div>
 
-      {/* Modals */}
-      <CheckInModal
-        isOpen={isCheckInOpen}
-        onClose={() => setIsCheckInOpen(false)}
-        habit={checkInHabit}
-        existingLog={checkInHabit ? todayLogMap.get(checkInHabit.id) || null : null}
-        onSuccess={() => {}}
-      />
+      {/* Modals rendered on-demand */}
+      {isCheckInOpen && (
+        <Suspense fallback={null}>
+          <CheckInModal
+            isOpen={isCheckInOpen}
+            onClose={() => setIsCheckInOpen(false)}
+            habit={checkInHabit}
+            existingLog={checkInHabit ? todayLogMap.get(checkInHabit.id) || null : null}
+            onSuccess={() => {}}
+          />
+        </Suspense>
+      )}
 
-      <HabitFormModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => {}}
-      />
+      {isCreateModalOpen && (
+        <Suspense fallback={null}>
+          <HabitFormModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setIsCreateModalOpen(false)}
+            onSuccess={() => {}}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
