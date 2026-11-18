@@ -9,7 +9,7 @@
  * users to export an emergency, non-destructive database backup directly.
  */
 
-import React, { Component, type ErrorInfo, type ReactNode } from 'react';
+import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Download, ChevronDown, ChevronUp, ShieldCheck } from 'lucide-react';
 import { BackupExportService } from '../../core/backup/backupExportService';
 
