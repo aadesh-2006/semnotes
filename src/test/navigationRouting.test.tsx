@@ -8,6 +8,10 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { MemoryRouter } from 'react-router-dom';
+import { AppContent } from '../App';
 import {
   NAVIGATION_ROUTES,
   APP_ROUTES,
@@ -126,5 +130,140 @@ describe('Database State Preservation Across Navigation (AUDIT-ROUT-01)', () => 
     expect(habitsAfter.length).toBe(1);
     expect(habitsAfter[0].id).toBe(habitsBefore[0].id);
     expect(habitsAfter[0].title).toBe('Deep Meditation');
+  });
+});
+
+describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
+  it('renders Command Center on default root URL (/)', async () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /command center/i })).toBeInTheDocument();
+  });
+
+  it('renders My Streaks view on direct access to /streaks', async () => {
+    render(
+      <MemoryRouter initialEntries={['/streaks']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /my streaks/i })).toBeInTheDocument();
+  });
+
+  it('redirects /habits alias directly to /streaks', async () => {
+    render(
+      <MemoryRouter initialEntries={['/habits']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /my streaks/i })).toBeInTheDocument();
+  });
+
+  it('renders Consistency Calendar on direct access to /calendar', async () => {
+    render(
+      <MemoryRouter initialEntries={['/calendar']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /consistency calendar/i })).toBeInTheDocument();
+  });
+
+  it('renders Journal & Reflections on direct access to /journal', async () => {
+    render(
+      <MemoryRouter initialEntries={['/journal']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /journal & reflections/i })).toBeInTheDocument();
+  });
+
+  it('renders Discipline Analytics on direct access to /analytics', async () => {
+    render(
+      <MemoryRouter initialEntries={['/analytics']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /discipline analytics/i })).toBeInTheDocument();
+  });
+
+  it('renders Focus Mode on direct access to /focus', async () => {
+    render(
+      <MemoryRouter initialEntries={['/focus']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /focus mode/i })).toBeInTheDocument();
+  });
+
+  it('renders Milestones & Rewards on direct access to /milestones', async () => {
+    render(
+      <MemoryRouter initialEntries={['/milestones']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /milestones & rewards/i })).toBeInTheDocument();
+  });
+
+  it('renders Settings & Storage on direct access to /settings', async () => {
+    render(
+      <MemoryRouter initialEntries={['/settings']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /settings & storage/i })).toBeInTheDocument();
+  });
+
+  it('redirects /data alias directly to /settings', async () => {
+    render(
+      <MemoryRouter initialEntries={['/data']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('heading', { level: 1, name: /settings & storage/i })).toBeInTheDocument();
+  });
+
+  it('renders 404 NotFoundView on unrecognized routes with recovery options', async () => {
+    render(
+      <MemoryRouter initialEntries={['/nonexistent-dimension']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
+    expect(screen.getByText('/nonexistent-dimension')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /return to command center/i })).toBeInTheDocument();
+  });
+
+  it('renders habit detail view on parameterized direct route /streaks/:habitId', async () => {
+    const habit = await HabitService.createHabit({
+      title: 'Algorithmic Prowess',
+      description: 'Daily LeetCode hard problem',
+      category: 'mind',
+      type: 'completion',
+      schedule: { frequency: 'daily', selectedDays: [0, 1, 2, 3, 4, 5, 6] },
+      startDate: '2026-11-01',
+    });
+
+    render(
+      <MemoryRouter initialEntries={[`/streaks/${habit.id}`]}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Algorithmic Prowess')).toBeInTheDocument();
+    });
   });
 });
