@@ -101,7 +101,7 @@ export function MilestoneFormModal({
         });
       }
 
-      await AchievementEngine.evaluateHabitMilestones(habitId);
+      await AchievementEngine.evaluateAndRecordAchievements(habitId);
 
       onSuccess(saved);
       onClose();
