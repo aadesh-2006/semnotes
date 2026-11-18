@@ -2,9 +2,10 @@
 
 > **Dignity. Self-respect. Discipline.**
 
-[![Status](https://img.shields.io/badge/Release-V1.0--RC2%20Batch%202%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
+[![Status](https://img.shields.io/badge/Release-V1.0--RC3%20Batch%203A%20Hardened-C5A869.svg)](https://github.com/aadesh-2006/semnotes)
 [![License](https://img.shields.io/badge/License-MIT-0D0E12.svg)](LICENSE)
 [![Theme](https://img.shields.io/badge/Theme-Obsidian%20%26%20Gold-282937.svg)](#design-system)
+[![Routing](https://img.shields.io/badge/Routing-URL--Based%20History-C5A869.svg)](#url-routing)
 [![Engine](https://img.shields.io/badge/Streak%20Engine-Strict%20%26%20Deterministic-3E885B.svg)](#strict-streak-engine)
 [![Engine](https://img.shields.io/badge/Calendar%20Engine-Discipline%20Heatmap-C5A869.svg)](#consistency-calendar)
 [![Subsystem](https://img.shields.io/badge/Journal%20Subsystem-Privacy--First%20Reflection-C5A869.svg)](#privacy-first-journal)
@@ -38,23 +39,24 @@ Unlike casual gamified habit trackers with vanity metrics and superficial streak
 - **Persistence:** Dexie.js (IndexedDB v6) with reactive `useLiveQuery`
 - **Validation:** Zod Schema Validation
 - **Engine:** Deterministic Strict Streak Engine (`StreakCalculator` & `StreakEngine`), Custom Milestone Engine (`MilestoneService`, `AchievementEngine`), Consistency Calendar Engine (`CalendarAggregationService`), Sovereign Reflection Engine (`ReflectionService`, `JournalService`, `UrgeDiagnosticService`), and Timestamp Focus Timer Engine (`FocusTimerEngine`, `PomodoroEngine`, `FocusSessionService`, `FocusAnalyticsService`)
-- **Testing:** Vitest & React Testing Library (251/251 automated tests passing across 29 test suites)
+- **Routing:** React Router v7 (`react-router-dom`) with HTML5 History, deep linking, and 404 recovery
+- **Testing:** Vitest & React Testing Library (270/270 automated tests passing across 30 test suites)
 
 ---
 
 ## 🧭 Navigation & Modules
 
-| Module | Purpose | Status |
-| :--- | :--- | :---: |
-| **Command Center** | High-level discipline overview, today's protocol checklist, active streak metrics, live 30D score, active focus preview, and reflection shortcuts. | **Active (Live Engine)** |
-| **Streak Architect** | Full CRUD for independent completion, quantitative, and abstinence habits. | **Active (Live Engine)** |
-| **Streak History & Details** | Deep-dive forensic streak timeline, invariants grid, milestones section, and status management. | **Active (Live Engine)** |
-| **Milestones & Rewards** | Idempotent custom threshold rewards configured individually per streak with claim ledger. | **Active (Live Engine)** |
-| **Consistency Calendar** | Contribution heatmap, monthly calendar grid, day-by-day detail panel, and multi-dimensional filters. | **Active (Live Engine)** |
-| **Journal & Reflections** | Sovereign local-first journal, morning intentions, evening debriefs, routine diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
-| **Discipline Analytics** | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, habit performance breakdowns, and consistency patterns. | **Active (Live Engine)** |
-| **Focus Mode** | Timestamp-driven custom focus (1m–12h), Pomodoro cycles, session history, and focus analytics. | **Active (Live Engine)** |
-| **Settings & Storage** | Local-first sovereign data management, validated JSON backup/restore with native ACID transactions, RFC 4180 CSV exports, and client-side AES-256 encrypted sync. | **Active (Live Engine)** |
+| Module | URL Path | Purpose | Status |
+| :--- | :--- | :--- | :---: |
+| **Command Center** | `/` | High-level discipline overview, today's protocol checklist, active streak metrics, live 30D score, active focus preview, and reflection shortcuts. | **Active (Live Engine)** |
+| **Streak Architect** | `/streaks` (`/habits`) | Full CRUD for independent completion, quantitative, and abstinence habits. | **Active (Live Engine)** |
+| **Streak History & Details** | `/streaks/:habitId` | Deep-dive forensic streak timeline, invariants grid, milestones section, and status management. | **Active (Live Engine)** |
+| **Milestones & Rewards** | `/milestones` | Idempotent custom threshold rewards configured individually per streak with claim ledger. | **Active (Live Engine)** |
+| **Consistency Calendar** | `/calendar` | Contribution heatmap, monthly calendar grid, day-by-day detail panel, and multi-dimensional filters. | **Active (Live Engine)** |
+| **Journal & Reflections** | `/journal` | Sovereign local-first journal, morning intentions, evening debriefs, routine diagnostics, and prompt rotation. | **Active (Live Subsystem)** |
+| **Discipline Analytics** | `/analytics` | Rolling 30-day algorithmic Discipline Score (no vanity metrics), trend curves, habit performance breakdowns, and consistency patterns. | **Active (Live Engine)** |
+| **Focus Mode** | `/focus` | Timestamp-driven custom focus (1m–12h), Pomodoro cycles, session history, and focus analytics. | **Active (Live Engine)** |
+| **Settings & Storage** | `/settings` (`/data`) | Local-first sovereign data management, validated JSON backup/restore with native ACID transactions, RFC 4180 CSV exports, and client-side AES-256 encrypted sync. | **Active (Live Engine)** |
 
 ---
 

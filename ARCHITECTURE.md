@@ -2,7 +2,7 @@
 
 **Product Name:** SEMNÓTĒS  
 **Tagline:** *Dignity. Self-respect. Discipline.*  
-**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1 (Security, Root Error Boundary, Alignment) & Batch 2 (Database Integrity, Historical Preservation & Restore Safety) Complete
+**Status:** M1–M9 Complete; M10 Phase 1 Audit, Phase 2 Batch 1, Batch 2 & Batch 3A (URL-Based Routing & Navigation Reliability) Complete
 
 ---
 
@@ -373,3 +373,78 @@ The Dexie schema was upgraded to Version 6 with the addition of the `deletedAt` 
 - Pre-transaction payload validation and preparation outside the transaction guarantees zero writes on malformed inputs.
 - Single atomic replace transaction with browser-enforced ACID rollback.
 - Conflict-safe merge transaction preserving existing records on compound key collisions with structured conflict diagnostics.
+
+---
+
+## 13. URL-Based Routing & Navigation Reliability (M10 Batch 3A)
+
+### A. Routing Architecture (`AUDIT-ROUT-01`)
+SEMNÓTĒS utilizes React Router v7 (`react-router-dom`) configured at the root level (`<BrowserRouter>` in `App.tsx`) to establish the browser URL as the immutable, authoritative single source of truth for all navigable application state:
+
+```
+┌────────────────────────────────────────────────────────┐
+│                   Browser Viewport                     │
+├────────────────────────────────────────────────────────┤
+│ <RootErrorBoundary>                                    │
+│   <BrowserRouter>                                      │
+│     <AppContent>                                       │
+│       ├── <AppShell> (Synchronized to useLocation())   │
+│       │     ├── <Sidebar> (Desktop NavLink anchors)    │
+│       │     ├── Header (Dynamic view title)            │
+│       │     └── Mobile Nav (Drawer & bottom bar)       │
+│       └── <Routes>                                     │
+│             ├── /                 -> <CommandCenter>   │
+│             ├── /streaks          -> <StreaksView>     │
+│             ├── /streaks/:habitId -> <HabitDetailView> │
+│             ├── /habits           -> Redirect /streaks │
+│             ├── /calendar         -> <CalendarView>    │
+│             ├── /journal          -> <JournalView>     │
+│             ├── /analytics        -> <AnalyticsView>   │
+│             ├── /focus            -> <FocusView>       │
+│             ├── /milestones       -> <MilestonesView>  │
+│             ├── /settings         -> <SettingsView>    │
+│             ├── /data             -> Redirect /settings│
+│             └── *                 -> <NotFoundView>    │
+└────────────────────────────────────────────────────────┘
+```
+
+### B. Route Table & Resolution
+Centralized in `src/app/routes.ts`:
+
+| View | Primary Route | Aliases / Redirects | Description |
+| :--- | :--- | :--- | :--- |
+| **Command Center** | `/` | — | Sovereign overview, daily checklist, active streaks preview |
+| **My Streaks** | `/streaks` | `/habits` | Independent trackers for completion, quantitative, and abstinence habits |
+| **Habit Detail** | `/streaks/:habitId` | `/habits/:habitId` | Direct deep link to forensic timeline, milestones, and audit history |
+| **Consistency Calendar** | `/calendar` | — | 7-column monthly grid, 52-week heatmap, day detail inspector |
+| **Journal & Reflections**| `/journal` | — | Morning intentions, evening debriefs, urge diagnostics, private entries |
+| **Discipline Analytics** | `/analytics` | — | Rolling 30-day algorithmic Discipline Score and trend curves |
+| **Focus Mode** | `/focus` | — | Timestamp focus timer (1m–12h) and configurable Pomodoro cycles |
+| **Milestones & Rewards** | `/milestones` | — | Idempotent threshold rules and reward claim ledger |
+| **Settings & Storage** | `/settings` | `/data` | JSON backup/restore with ACID transactions, CSV exports, encrypted sync |
+| **Path Not Found** | `*` | Any unrecognized | 404 recovery view with return actions to `/` and `/streaks` |
+
+### C. Deep Linking & State Preservation
+1. **Refresh Preservation:** Reloading any view or habit detail timeline preserves the exact view without resetting to default dashboard state.
+2. **Browser Back / Forward:** Full compatibility with standard browser navigation and history stack.
+3. **Database Independence:** Routing transitions and URL changes never trigger database resets or table re-instantiations.
+4. **Transient Modals:** Transient creation/check-in modals remain lightweight overlays that do not pollute browser history.
+
+### D. Static Hosting & Production SPA Fallback Configuration
+Because SEMNÓTĒS is a Single Page Application (SPA) using HTML5 History API, production static hosts must rewrite all non-file asset requests to `/index.html`:
+- **Vercel:** Configure `vercel.json`:
+  ```json
+  { "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
+  ```
+- **Netlify:** Include a `_redirects` file in `public/`:
+  ```
+  /*    /index.html   200
+  ```
+- **Nginx:** Configure `nginx.conf`:
+  ```nginx
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+  ```
+- **Cloudflare Pages / GitHub Pages:** Standard SPA rewrite rule or `404.html` fallback.
+- **Vite Dev Server:** HTML5 history API fallback is natively built-in for local development.

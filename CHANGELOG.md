@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.0-rc.3] — 2026-11-18 (Milestone 10 Phase 2, Batch 3A: URL-Based Routing & Navigation Reliability)
+
+### Added
+- **Centralized Application Route Configuration (`src/app/routes.ts`):**
+  - Integrated `react-router-dom` (v7) establishing the browser URL as the immutable single source of truth for application view state.
+  - Defined centralized `APP_ROUTES` dictionary and enriched `RouteConfig` with standard root paths:
+    - `/` -> Command Center (`dashboard`)
+    - `/streaks` -> My Streaks & Habit Architecture (`streaks`)
+    - `/habits` -> Alias redirecting to `/streaks`
+    - `/streaks/:habitId` -> Direct deep link to individual habit detail timeline and milestones
+    - `/habits/:habitId` -> Alias redirecting to `/streaks/:habitId`
+    - `/calendar` -> Consistency Calendar & Heatmap (`calendar`)
+    - `/journal` -> Sovereign Journal & Reflection Subsystem (`journal`)
+    - `/analytics` -> 30-Day Rolling Discipline Score & Metrics (`analytics`)
+    - `/focus` -> Timestamp Focus Timer & Pomodoro Engine (`focus`)
+    - `/milestones` -> Milestones & Reward Center (`milestones`)
+    - `/settings` -> Settings & Sovereign Data Management (`settings`)
+    - `/data` -> Alias redirecting to `/settings`
+  - Added pure route resolution utilities: `getRouteIdFromPathname`, `getPathForRoute`, and `isKnownRoutePath`.
+- **Obsidian & Gold 404 Not Found Experience (`src/features/not-found/NotFoundView.tsx`):**
+  - Dedicated solemn fallback view catching all unrecognized URL coordinates (`path="*"`) without blank screens or unhandled exceptions.
+  - Displays unrecognized path string, compass insignia, and direct return actions to Command Center (`/`) and My Streaks (`/streaks`).
+- **Synchronized Navigation Primitives (`src/app/Sidebar.tsx` & `src/app/AppShell.tsx`):**
+  - Desktop Sidebar and Mobile Navigation derive active highlighting dynamically from `useLocation().pathname`.
+  - Upgraded navigation elements to semantic `<nav>` containers with `<NavLink>` components providing standard `href` anchors, keyboard accessibility, and `aria-current="page"` attributes.
+  - Seamless support for browser Back and Forward history navigation.
+  - Complete route preservation on browser refresh or direct URL entry.
+- **Deep-Linked Habit Detail Timeline (`src/features/streaks/StreaksView.tsx`):**
+  - Reads `:habitId` from URL parameters, rendering the forensic timeline directly on deep navigation or page refresh.
+  - Calendar Day Detail panel seamlessly opens `/streaks/:habitId`.
+- **Automated Routing Test Suite (`src/test/navigationRouting.test.tsx`):**
+  - 19 automated tests verifying route mappings, direct URL rendering, alias redirects, parameter extraction, 404 error rendering, browser history, and IndexedDB state preservation across navigation.
+  - Platform-wide test count expanded to 270/270 passing tests across 30 test suites.
+
+---
+
 ## [1.0.0-rc.2] — 2026-11-18 (Milestone 10 Phase 2, Batch 2: Database Integrity, Historical Preservation & Restore Safety)
 
 ### Added

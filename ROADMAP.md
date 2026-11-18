@@ -14,7 +14,7 @@
 | **M7.1** | **Product Alignment & Cleanup** | **DONE** | Universal discipline tracking, removed recovery analytics, date-independent weekday calculation. |
 | **M8** | **Focus Mode & Custom Pomodoro** | **DONE** | Timestamp-driven focus timer (1m–12h), Pomodoro cycles, session history, analytics, Command Center. |
 | **M9** | **Storage & Sync** | **DONE** | Complete JSON backup/restore, SHA-256 checksums, CSV exports, AES-256-GCM encryption, sync provider. |
-| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1 & Batch 2 (Database Integrity & Restore Safety) completed. |
+| **M10** | **Quality Assurance & Polish** | **IN PROGRESS** | Phase 1 Audit done; Phase 2 Batch 1, Batch 2 & Batch 3A (Routing) completed. |
 
 ---
 
@@ -163,8 +163,14 @@
   - [x] `AUDIT-DATA-02`: Pre-transaction validation and in-memory preparation (`validateAndPrepare`) to fail fast before touching database tables.
   - [x] `AUDIT-DATA-02`: Conflict-safe merge restore preserving local compound keys with detailed conflict reporting (`MergeConflictDetail[]`).
   - [x] Automated test suite expanded to 251 passing tests across 29 test files (100% pass rate).
-- [ ] **Batch 3: Routing, Performance & Cryptography (Upcoming)**
-  - [ ] `AUDIT-ROUT-01`: Hash-based SPA routing for refresh stability.
+- [x] **Batch 3A: URL-Based Routing & Navigation Reliability (Completed)**
+  - [x] `AUDIT-ROUT-01`: Integrated React Router v7 (`react-router-dom`) with HTML5 browser history, establishing URL as single source of truth.
+  - [x] `AUDIT-ROUT-01`: Centralized route configuration `APP_ROUTES` and `NAVIGATION_ROUTES` across all primary modules, alias redirects (`/habits`, `/data`), and deep-linked habit detail (`/streaks/:habitId`).
+  - [x] `AUDIT-ROUT-01`: Synchronized desktop sidebar and mobile navigation drawer/shortcuts to active location via `useLocation` and semantic `<NavLink>`.
+  - [x] `AUDIT-ROUT-01`: Obsidian & Gold 404 `NotFoundView` catching invalid paths with clean return actions.
+  - [x] `AUDIT-ROUT-01`: Documented SPA fallback rewrite configuration for Vercel, Netlify, Nginx, and static hosting platforms.
+  - [x] Automated test suite expanded to 270 passing tests across 30 test files (100% pass rate).
+- [ ] **Batch 3B: Performance, Cryptography & Tooling (Upcoming)**
   - [ ] `AUDIT-PERF-01`: Route-level dynamic code splitting for bundle optimization.
   - [ ] `AUDIT-SEC-02`: Configurable PBKDF2 iterations for low-spec device safety.
   - [ ] `AUDIT-DEP-01` & `AUDIT-TEST-02`: Vitest v8 coverage tooling setup.
