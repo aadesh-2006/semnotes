@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 import { AppContent } from '../App';
@@ -246,6 +246,31 @@ describe('Direct URL Access & View Rendering (AUDIT-ROUT-01)', () => {
         expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
         expect(screen.getByText('/nonexistent-dimension')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /return to command center/i })).toBeInTheDocument();
+      },
+      { timeout: 15000 }
+    );
+  });
+
+  it('recovers to Command Center when clicking Return to Command Center from 404', async () => {
+    render(
+      <MemoryRouter initialEntries={['/unknown-cosmos']}>
+        <AppContent />
+      </MemoryRouter>
+    );
+
+    await waitFor(
+      () => {
+        expect(screen.getByText('404 — Path Not Found')).toBeInTheDocument();
+      },
+      { timeout: 15000 }
+    );
+
+    const returnBtn = screen.getByRole('button', { name: /return to command center/i });
+    fireEvent.click(returnBtn);
+
+    await waitFor(
+      () => {
+        expect(screen.getByRole('heading', { level: 1, name: /command center/i })).toBeInTheDocument();
       },
       { timeout: 15000 }
     );
